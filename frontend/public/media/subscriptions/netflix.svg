@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1200" viewBox="0 0 900 1200" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#5F0A17" />
+      <stop offset="55%" stop-color="#050815" />
+      <stop offset="100%" stop-color="#02030A" />
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="18%" r="72%">
+      <stop offset="0%" stop-color="#E50914" stop-opacity="0.44" />
+      <stop offset="65%" stop-color="#E50914" stop-opacity="0.12" />
+      <stop offset="100%" stop-color="#E50914" stop-opacity="0" />
+    </radialGradient>
+    <pattern id="grid" width="56" height="56" patternUnits="userSpaceOnUse">
+      <path d="M56 0H0V56" fill="none" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="1" />
+    </pattern>
+    <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="22" stdDeviation="28" flood-color="#000000" flood-opacity="0.58" />
+    </filter>
+    <filter id="badgeGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10" result="blur" />
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.898 0 0 0 0 0.035 0 0 0 0 0.078 0 0 0 0.75 0" />
+    </filter>
+  </defs>
+
+  <rect width="900" height="1200" fill="url(#bg)" />
+  <rect width="900" height="1200" fill="url(#glow)" />
+  <rect width="900" height="1200" fill="url(#grid)" opacity="0.35" />
+
+  <g filter="url(#cardShadow)">
+    <rect x="84" y="96" width="732" height="1008" rx="64" fill="#0B1020" fill-opacity="0.76" stroke="#FFFFFF" stroke-opacity="0.12" />
+  </g>
+
+  <rect x="120" y="140" width="660" height="44" rx="22" fill="#050815" fill-opacity="0.65" stroke="#FFFFFF" stroke-opacity="0.10" />
+  <text x="152" y="170" fill="#E50914" font-family="Arial, sans-serif" font-size="22" letter-spacing="6" font-weight="700">DIGITAL GIFT CARD</text>
+
+  <g transform="translate(120 230)">
+    <rect x="0" y="0" width="176" height="176" rx="40" fill="#E50914" fill-opacity="0.14" stroke="#E50914" stroke-opacity="0.55" />
+    <rect x="44" y="24" width="26" height="128" fill="#E50914" opacity="0.92" transform="skewX(-12)" />
+    <rect x="72" y="24" width="26" height="128" fill="#FF5F6D" opacity="0.20" transform="skewX(-12)" />
+    <rect x="102" y="24" width="26" height="128" fill="#E50914" opacity="0.92" transform="skewX(-12)" />
+  </g>
+
+  <text x="120" y="510" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="92" font-weight="800" letter-spacing="1">Netflix</text>
+  <text x="120" y="572" fill="#D6E6FF" font-family="Arial, sans-serif" font-size="32" font-weight="500">Top up your Netflix balance instantly with a secure code.</text>
+
+  <g filter="url(#badgeGlow)">
+    <rect x="120" y="640" width="248" height="58" rx="29" fill="#E50914" fill-opacity="0.18" stroke="#E50914" stroke-opacity="0.55" />
+  </g>
+  <text x="158" y="679" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="24" font-weight="800" letter-spacing="2">INSTANT CODE</text>
+
+  <rect x="120" y="738" width="660" height="2" fill="#FFFFFF" fill-opacity="0.10" />
+
+  <text x="120" y="816" fill="#AFC3FF" font-family="Arial, sans-serif" font-size="26">Delivered immediately after checkout inside your NEXUS order.</text>
+  <text x="120" y="860" fill="#AFC3FF" font-family="Arial, sans-serif" font-size="22" opacity="0.9">Single-seller stock. Clear redemption steps.</text>
+
+  <g opacity="0.92">
+    <rect x="120" y="946" width="352" height="56" rx="28" fill="#FFFFFF" fill-opacity="0.06" stroke="#FFFFFF" stroke-opacity="0.12" />
+    <text x="152" y="982" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="20" font-weight="700" letter-spacing="4">NEXUS VERIFIED STOCK</text>
+  </g>
+
+  <circle cx="780" cy="258" r="150" fill="#E50914" fill-opacity="0.10" />
+  <circle cx="820" cy="990" r="170" fill="#00D4FF" fill-opacity="0.08" />
+</svg>
