@@ -3,7 +3,8 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "../store/auth.store";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
+  baseURL: import.meta.env.VITE_API_URL ?? "/api/v1",
+  timeout: 8000,
   withCredentials: true
 });
 
@@ -46,4 +47,3 @@ api.interceptors.response.use(
 );
 
 export default api;
-
