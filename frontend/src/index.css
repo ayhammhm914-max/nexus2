@@ -92,6 +92,85 @@ a {
   display: none;
 }
 
+.trust-character-panel {
+  position: relative;
+  min-height: 650px;
+  overflow: visible;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.trust-character-panel img {
+  position: absolute;
+  inset: -7% -16%;
+  height: 114%;
+  width: 132%;
+  max-width: none;
+  object-fit: cover;
+  opacity: 0.78;
+  filter: saturate(1.08) contrast(1.12) drop-shadow(0 38px 72px rgba(0, 0, 0, 0.72));
+  -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 0%, #000 42%, rgba(0, 0, 0, 0.72) 58%, transparent 82%);
+  mask-image: radial-gradient(ellipse at 50% 50%, #000 0%, #000 42%, rgba(0, 0, 0, 0.72) 58%, transparent 82%);
+  will-change: transform;
+}
+
+.trust-character-panel-left img {
+  object-position: 52% 50%;
+  animation: trust-character-float-left 9s ease-in-out infinite;
+}
+
+.trust-character-panel-right img {
+  object-position: 50% 50%;
+  animation: trust-character-float-right 10s ease-in-out infinite;
+}
+
+.trust-character-panel::before,
+.trust-character-panel::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.trust-character-panel::before {
+  inset: 8% -12% 10%;
+  background: radial-gradient(ellipse at 50% 45%, rgba(0, 212, 255, 0.24), rgba(124, 58, 237, 0.1) 44%, transparent 72%);
+  filter: blur(28px);
+  opacity: 0.58;
+  transform: translateZ(0);
+}
+
+.trust-character-panel::after {
+  inset: -12%;
+  background: radial-gradient(ellipse at 50% 50%, transparent 32%, rgba(5, 7, 14, 0.18) 52%, rgba(5, 7, 14, 0.94) 86%);
+}
+
+.trust-character-panel-right::before {
+  background: radial-gradient(ellipse at 54% 46%, rgba(255, 141, 64, 0.2), rgba(124, 58, 237, 0.12) 45%, transparent 74%);
+}
+
+@keyframes trust-character-float-left {
+  0%,
+  100% {
+    transform: translate3d(-8px, 10px, 0) scale(1.08) rotate(-1deg);
+  }
+
+  50% {
+    transform: translate3d(8px, -12px, 0) scale(1.12) rotate(0.7deg);
+  }
+}
+
+@keyframes trust-character-float-right {
+  0%,
+  100% {
+    transform: translate3d(8px, 8px, 0) scale(1.08) rotate(0.8deg);
+  }
+
+  50% {
+    transform: translate3d(-8px, -14px, 0) scale(1.12) rotate(-0.6deg);
+  }
+}
+
 .hero-cinematic {
   background:
     radial-gradient(ellipse at 50% 44%, rgba(3, 6, 14, 0.98) 0%, rgba(6, 9, 20, 0.94) 36%, rgba(8, 14, 30, 0.62) 58%, rgba(8, 14, 30, 0.22) 100%),
@@ -548,6 +627,7 @@ a {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .trust-character-panel img,
   .hero-vault-track,
   .hero-vault-rail {
     animation: none;
