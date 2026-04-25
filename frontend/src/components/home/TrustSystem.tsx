@@ -47,8 +47,9 @@ export const TrustSystem = () => {
   ];
 
   return (
-    <section className="relative overflow-hidden border-b border-white/10">
-      <div className="mx-auto grid max-w-[1880px] grid-cols-1 gap-6 px-4 py-10 sm:px-6 xl:grid-cols-[minmax(190px,300px)_minmax(760px,1120px)_minmax(190px,300px)] xl:items-stretch xl:px-7">
+    <section className="trust-cinematic-section relative overflow-hidden border-b border-white/10">
+      <div className="trust-ember-field" aria-hidden="true" />
+      <div className="mx-auto grid max-w-[1880px] grid-cols-1 gap-6 px-4 py-10 sm:px-6 xl:grid-cols-[minmax(220px,330px)_minmax(760px,1120px)_minmax(220px,330px)] xl:items-stretch xl:px-7">
         <motion.aside
           initial={{ opacity: 0, x: -28 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -60,10 +61,10 @@ export const TrustSystem = () => {
           <img src={radahnArtwork} alt="" className="h-full w-full object-cover" loading="lazy" />
         </motion.aside>
 
-        <div dir={dir}>
-          <div className="grid gap-4 rounded-[32px] border border-white/10 bg-white/[0.04] p-5 shadow-card lg:grid-cols-4 lg:p-6">
+        <div className="trust-content-shell relative z-10" dir={dir}>
+          <div className="trust-metrics-panel grid gap-4 p-5 lg:grid-cols-4 lg:p-6">
             {metrics.map((metric) => (
-              <div key={metric.label} className="rounded-[24px] border border-white/10 bg-background/50 p-5">
+              <div key={metric.label} className="trust-metric-card group p-5">
                 <div className="font-display text-3xl text-white">{metric.value}</div>
                 <div className="mt-2 text-xs uppercase tracking-[0.28em] text-muted">{metric.label}</div>
               </div>
@@ -78,9 +79,11 @@ export const TrustSystem = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.05 }}
-                className="rounded-[28px] border border-white/10 bg-white/[0.03] p-6 shadow-card"
+                className="trust-feature-card group p-6"
               >
-                <card.icon className="h-5 w-5 text-primary" />
+                <span className="trust-icon-tile">
+                  <card.icon className="h-5 w-5" />
+                </span>
                 <h3 className="mt-5 text-lg font-semibold text-white">{t(card.titleKey)}</h3>
                 <p className="mt-3 text-sm leading-7 text-muted">{t(card.bodyKey)}</p>
               </motion.article>
