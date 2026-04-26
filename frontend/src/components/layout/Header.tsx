@@ -345,7 +345,7 @@ export const Header = () => {
         </div>
       ) : null}
 
-      <div className="glass border-b border-white/10">
+      <div className="glass relative z-30 border-b border-white/10">
         <div className="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
           <Link to="/" className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 shadow-glow-blue">
@@ -455,13 +455,13 @@ export const Header = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.12, ease: "easeOut" }}
-            className="pointer-events-none fixed inset-0 z-10 hidden bg-[radial-gradient(circle_at_top,rgba(64,224,255,0.1),transparent_28%),linear-gradient(180deg,rgba(4,8,20,0.08),rgba(4,8,20,0.3)_42%,rgba(4,8,20,0.55))] backdrop-blur-[4px] lg:block"
+            className="pointer-events-none fixed inset-0 z-20 hidden bg-[radial-gradient(circle_at_top,rgba(64,224,255,0.14),transparent_28%),linear-gradient(180deg,rgba(4,8,20,0.18),rgba(4,8,20,0.46)_38%,rgba(4,8,20,0.74))] backdrop-blur-[12px] lg:block"
           />
         ) : null}
       </AnimatePresence>
 
       <div
-        className="navbar-laser-strip relative hidden border-b border-white/10 shadow-[0_12px_40px_rgba(3,6,18,0.42)] lg:block"
+        className="navbar-laser-strip relative z-30 hidden border-b border-white/10 shadow-[0_12px_40px_rgba(3,6,18,0.42)] lg:block"
         onMouseLeave={() => setDesktopCategoryOpen(null)}
       >
         <div className="navbar-edge-track" />
@@ -515,7 +515,7 @@ export const Header = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6, scale: 0.992 }}
               transition={{ duration: 0.12, ease: "easeOut" }}
-              className="absolute inset-x-0 top-full z-20 border-t border-white/10 bg-[linear-gradient(180deg,rgba(9,14,30,0.97),rgba(10,15,28,0.93))] shadow-[0_32px_90px_rgba(2,4,14,0.58)] backdrop-blur-[16px]"
+              className="absolute inset-x-0 top-full z-40 border-t border-white/10 bg-[linear-gradient(180deg,rgba(9,14,30,0.97),rgba(10,15,28,0.93))] shadow-[0_32px_90px_rgba(2,4,14,0.58)] backdrop-blur-[22px]"
             >
               {activeDesktopMenu.key === "gift-cards" ? (
                 <div className="mx-auto grid max-w-screen-2xl gap-10 px-6 py-8 xl:grid-cols-[1.2fr_1fr_1fr_1fr]">
