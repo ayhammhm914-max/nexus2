@@ -1,5 +1,10 @@
 import type { Request, Response } from "express";
 import { authService } from "./auth.service";
+import {
+  clearTokenCookies,
+  setAccessTokenCookie,
+  setRefreshTokenCookie
+} from "../../middleware/auth-cookie.middleware";
 import { successResponse } from "../../utils/response.utils";
 
 export const authController = {
@@ -9,13 +14,13 @@ export const authController = {
       userAgent: req.get("user-agent")
     });
 
-    authService.attachRefreshCookie(res, result.refreshToken);
+    setAccessTokenCookie(res, result.accessToken);
+    setRefreshTokenCookie(res, result.refreshToken);
 
     return res.status(201).json(
       successResponse(
         {
-          user: result.user,
-          accessToken: result.accessToken
+          user: result.user
         },
         "Registration successful."
       )
@@ -28,13 +33,24 @@ export const authController = {
       userAgent: req.get("user-agent")
     });
 
-    authService.attachRefreshCookie(res, result.refreshToken);
+    if ("requiresTwoFactor" in result && result.requiresTwoFactor) {
+      return res.status(202).json(
+        successResponse(
+          {
+            requiresTwoFactor: true
+          },
+          "Two-factor authentication code required."
+        )
+      );
+    }
+
+    setAccessTokenCookie(res, result.accessToken);
+    setRefreshTokenCookie(res, result.refreshToken);
 
     return res.json(
       successResponse(
         {
-          user: result.user,
-          accessToken: result.accessToken
+          user: result.user
         },
         "Login successful."
       )
@@ -43,19 +59,19 @@ export const authController = {
 
   logout: async (req: Request, res: Response) => {
     await authService.logout(req);
-    authService.clearRefreshCookie(res);
+    clearTokenCookies(res);
     return res.json(successResponse(null, "Logged out successfully."));
   },
 
   refresh: async (req: Request, res: Response) => {
     const result = await authService.refresh(req);
-    authService.attachRefreshCookie(res, result.refreshToken);
+    setAccessTokenCookie(res, result.accessToken);
+    setRefreshTokenCookie(res, result.refreshToken);
 
     return res.json(
       successResponse(
         {
-          user: result.user,
-          accessToken: result.accessToken
+          user: result.user
         },
         "Session refreshed."
       )
@@ -90,7 +106,7 @@ export const authController = {
   },
 
   disableTwoFactor: async (req: Request, res: Response) => {
-    await authService.disableTwoFactor(req.user!.sub, req.body.password);
+    await authService.disableTwoFactor(req.user!.sub, req.body.password, req.body.token);
     return res.json(successResponse(null, "Two-factor authentication disabled."));
   }
 };

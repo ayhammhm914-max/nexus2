@@ -10,7 +10,7 @@ const createStore = () =>
       })
     : undefined;
 
-const createRateLimiter = (options: Partial<Options>) => {
+export const createRateLimiter = (options: Partial<Options>) => {
   const store = createStore();
 
   return rateLimit({
@@ -40,6 +40,11 @@ export const rateLimiters = {
   register: createRateLimiter({ windowMs: 60 * 60_000, limit: 5 }),
   forgotPassword: createRateLimiter({ windowMs: 60 * 60_000, limit: 3 }),
   refresh: createRateLimiter({ windowMs: 60_000, limit: 30 }),
+  payment: createRateLimiter({ windowMs: 60_000, limit: 5 }),
   checkout: createRateLimiter({ windowMs: 60_000, limit: 10 }),
+  upload: createRateLimiter({ windowMs: 60 * 60_000, limit: 50 }),
+  admin: createRateLimiter({ windowMs: 60_000, limit: 100 }),
+  apiKey: createRateLimiter({ windowMs: 24 * 60 * 60_000, limit: 5 }),
+  webhook: createRateLimiter({ windowMs: 60_000, limit: 1000 }),
   authenticated: createRateLimiter({ windowMs: 60_000, limit: 500 })
 };

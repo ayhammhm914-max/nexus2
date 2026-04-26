@@ -9,6 +9,11 @@ import { emailTransport } from "../../config/email";
 import { env } from "../../config/env";
 import { redis } from "../../config/redis";
 import {
+  clearTokenCookies,
+  refreshTokenCookieOptions,
+  setRefreshTokenCookie
+} from "../../middleware/auth-cookie.middleware";
+import {
   decryptKey,
   encryptKey,
   generateBackupCodes,
@@ -19,6 +24,7 @@ import {
 } from "../../utils/crypto.utils";
 import {
   orderConfirmationEmail,
+  passwordChangedEmail,
   passwordResetEmail,
   verificationEmail,
   welcomeEmail
@@ -28,18 +34,63 @@ import { signJwt, verifyJwt } from "../../utils/jwt.utils";
 type SessionMeta = {
   ipAddress?: string;
   userAgent?: string;
-};
-
-const refreshCookieOptions = {
-  httpOnly: true,
-  secure: env.NODE_ENV === "production",
-  sameSite: "strict" as const,
-  maxAge: 7 * 24 * 60 * 60 * 1000,
-  path: "/"
+  deviceName?: string;
 };
 
 const decimalToNumber = (value: Prisma.Decimal | number) =>
   typeof value === "number" ? value : Number(value);
+
+const BCRYPT_ROUNDS = Math.max(env.BCRYPT_ROUNDS, 12);
+const passwordRegex =
+  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,128}$/;
+
+const hashPassword = async (password: string) => {
+  try {
+    return await bcrypt.hash(password, BCRYPT_ROUNDS);
+  } catch {
+    throw new Error("Unable to secure password at this time.");
+  }
+};
+
+const verifyPassword = async (plainPassword: string, hashedPassword: string) => {
+  try {
+    return await bcrypt.compare(plainPassword, hashedPassword);
+  } catch {
+    return false;
+  }
+};
+
+const parseDeviceName = (userAgent?: string) => {
+  const normalizedAgent = (userAgent ?? "").toLowerCase();
+
+  const browser =
+    normalizedAgent.includes("edg/")
+      ? "Edge"
+      : normalizedAgent.includes("chrome/")
+        ? "Chrome"
+        : normalizedAgent.includes("firefox/")
+          ? "Firefox"
+          : normalizedAgent.includes("safari/") && !normalizedAgent.includes("chrome/")
+            ? "Safari"
+            : normalizedAgent.includes("opr/")
+              ? "Opera"
+              : "Unknown Browser";
+
+  const operatingSystem =
+    normalizedAgent.includes("windows")
+      ? "Windows"
+      : normalizedAgent.includes("android")
+        ? "Android"
+        : normalizedAgent.includes("iphone") || normalizedAgent.includes("ipad")
+          ? "iOS"
+          : normalizedAgent.includes("mac os")
+            ? "macOS"
+            : normalizedAgent.includes("linux")
+              ? "Linux"
+              : "Unknown OS";
+
+  return `${browser} on ${operatingSystem}`;
+};
 
 const serializeUser = (user: {
   id: string;
@@ -74,6 +125,25 @@ const sendEmail = async (to: string, subject: string, html: string) => {
   });
 };
 
+const recordLoginAttempt = async (
+  email: string,
+  success: boolean,
+  meta: SessionMeta,
+  userId?: string
+) => {
+  await prisma.loginAttempt.create({
+    data: {
+      email,
+      success,
+      ipAddress: meta.ipAddress,
+      userAgent: meta.userAgent,
+      userId
+    }
+  });
+};
+
+const encryptJsonValue = (value: unknown) => JSON.stringify(encryptKey(JSON.stringify(value)));
+
 const createSessionTokens = async (
   user: {
     id: string;
@@ -83,12 +153,15 @@ const createSessionTokens = async (
   },
   meta: SessionMeta
 ) => {
+  const sessionId = crypto.randomUUID();
+
   const access = signJwt(
     {
       sub: user.id,
       email: user.email,
       username: user.username,
-      role: user.role
+      role: user.role,
+      sessionId
     },
     "access"
   );
@@ -99,7 +172,7 @@ const createSessionTokens = async (
       email: user.email,
       username: user.username,
       role: user.role,
-      sessionId: crypto.randomUUID()
+      sessionId
     },
     "refresh"
   );
@@ -113,7 +186,9 @@ const createSessionTokens = async (
       refreshTokenHash,
       ipAddress: meta.ipAddress,
       userAgent: meta.userAgent,
-      expiresAt: new Date(Date.now() + refreshCookieOptions.maxAge)
+      deviceName: meta.deviceName ?? parseDeviceName(meta.userAgent),
+      lastActivity: new Date(),
+      expiresAt: new Date(Date.now() + (refreshTokenCookieOptions.maxAge ?? 7 * 24 * 60 * 60 * 1000))
     }
   });
 
@@ -158,7 +233,13 @@ const createVerificationToken = async (userId: string) => {
 const createPasswordResetToken = async (userId: string) => {
   const token = generateSecureToken();
   const tokenHash = hashToken(token);
-  await redis.setEx(`nexus:password-reset:${tokenHash}`, 60 * 60, userId);
+  await prisma.passwordResetToken.create({
+    data: {
+      userId,
+      tokenHash,
+      expiresAt: new Date(Date.now() + 60 * 60 * 1000)
+    }
+  });
   return token;
 };
 
@@ -169,6 +250,55 @@ const getTwoFactorSecret = (value: string | null) => {
 
   const parsed = JSON.parse(value) as { encrypted: string; iv: string; tag: string };
   return decryptKey(parsed.encrypted, parsed.iv, parsed.tag);
+};
+
+const getTwoFactorBackupCodes = (value: string | null) => {
+  if (!value) {
+    return [] as Array<{ code: string; used: boolean }>;
+  }
+
+  const parsed = JSON.parse(value) as { encrypted: string; iv: string; tag: string };
+  return JSON.parse(decryptKey(parsed.encrypted, parsed.iv, parsed.tag)) as Array<{
+    code: string;
+    used: boolean;
+  }>;
+};
+
+const verifyStoredTwoFactorCode = async (
+  user: {
+    id: string;
+    twoFactorSecret: string | null;
+    twoFactorBackupCodes?: string | null;
+  },
+  code: string
+) => {
+  const secret = getTwoFactorSecret(user.twoFactorSecret);
+  if (secret && verifyTOTP(code, secret)) {
+    return true;
+  }
+
+  const backupCodes = getTwoFactorBackupCodes(user.twoFactorBackupCodes ?? null);
+  const normalizedCode = code.trim().toUpperCase();
+  const matchedBackupCode = backupCodes.find(
+    (backupCode) => backupCode.code === normalizedCode && !backupCode.used
+  );
+
+  if (!matchedBackupCode) {
+    return false;
+  }
+
+  const updatedBackupCodes = backupCodes.map((backupCode) =>
+    backupCode.code === normalizedCode ? { ...backupCode, used: true } : backupCode
+  );
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      twoFactorBackupCodes: encryptJsonValue(updatedBackupCodes)
+    }
+  });
+
+  return true;
 };
 
 export const authService = {
@@ -188,7 +318,7 @@ export const authService = {
       throw new Error("Password has appeared in a known breach. Choose a safer one.");
     }
 
-    const passwordHash = await bcrypt.hash(input.password, env.BCRYPT_ROUNDS);
+    const passwordHash = await hashPassword(input.password);
     const user = await prisma.user.create({
       data: {
         email: input.email,
@@ -227,25 +357,28 @@ export const authService = {
     input: { email: string; password: string; twoFactorCode?: string },
     meta: SessionMeta
   ) {
-    const lockKey = `nexus:account-lock:${input.email.toLowerCase()}`;
+    const normalizedEmail = input.email.toLowerCase();
+    const lockKey = `nexus:account-lock:${normalizedEmail}`;
     const isLocked = await redis.get(lockKey);
 
     if (isLocked) {
+      await recordLoginAttempt(normalizedEmail, false, meta);
       throw new Error("Account temporarily locked due to repeated failed logins.");
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: input.email.toLowerCase() }
+      where: { email: normalizedEmail }
     });
 
     if (!user?.passwordHash) {
+      await recordLoginAttempt(normalizedEmail, false, meta);
       throw new Error("Invalid email or password.");
     }
 
-    const validPassword = await bcrypt.compare(input.password, user.passwordHash);
+    const validPassword = await verifyPassword(input.password, user.passwordHash);
 
     if (!validPassword) {
-      const attemptsKey = `nexus:login-attempts:${input.email.toLowerCase()}`;
+      const attemptsKey = `nexus:login-attempts:${normalizedEmail}`;
       const attempts = await redis.incr(attemptsKey);
       if (attempts === 1) {
         await redis.expire(attemptsKey, 15 * 60);
@@ -255,10 +388,12 @@ export const authService = {
         await redis.setEx(lockKey, 15 * 60, "1");
       }
 
+      await recordLoginAttempt(normalizedEmail, false, meta, user.id);
       throw new Error("Invalid email or password.");
     }
 
     if (user.isBanned) {
+      await recordLoginAttempt(normalizedEmail, false, meta, user.id);
       throw new Error(user.banReason || "This account has been suspended.");
     }
 
@@ -270,25 +405,33 @@ export const authService = {
         "Verify your NEXUS email",
         verificationEmail(user.username, verificationUrl)
       );
+      await recordLoginAttempt(normalizedEmail, false, meta, user.id);
       throw new Error("Email not verified. A new verification email has been sent.");
     }
 
     if (user.twoFactorEnabled) {
-      const secret = getTwoFactorSecret(user.twoFactorSecret);
-
-      if (!secret || !input.twoFactorCode || !verifyTOTP(input.twoFactorCode, secret)) {
+      if (!input.twoFactorCode) {
         await redis.setEx(`nexus:2fa-pending:${user.id}`, 300, "1");
-        throw new Error("Two-factor authentication code required.");
+        return {
+          requiresTwoFactor: true as const
+        };
+      }
+
+      const twoFactorValid = await verifyStoredTwoFactorCode(user, input.twoFactorCode);
+      if (!twoFactorValid) {
+        await recordLoginAttempt(normalizedEmail, false, meta, user.id);
+        throw new Error("Invalid two-factor authentication code.");
       }
     }
 
-    await redis.del(`nexus:login-attempts:${input.email.toLowerCase()}`);
+    await redis.del(`nexus:login-attempts:${normalizedEmail}`);
     await prisma.user.update({
       where: { id: user.id },
       data: { lastLoginAt: new Date() }
     });
 
     const tokens = await createSessionTokens(user, meta);
+    await recordLoginAttempt(normalizedEmail, true, meta, user.id);
 
     return {
       user: serializeUser(user),
@@ -302,7 +445,14 @@ export const authService = {
       const refreshTokenHash = hashToken(refreshToken);
       await prisma.userSession.updateMany({
         where: { refreshTokenHash },
-        data: { isRevoked: true }
+        data: { isRevoked: true, revokedAt: new Date() }
+      });
+    }
+
+    if (req.user?.sessionId) {
+      await prisma.userSession.updateMany({
+        where: { id: req.user.sessionId },
+        data: { isRevoked: true, revokedAt: new Date() }
       });
     }
 
@@ -329,19 +479,20 @@ export const authService = {
     if (!session || session.isRevoked || session.expiresAt < new Date()) {
       await prisma.userSession.updateMany({
         where: { userId: payload.sub },
-        data: { isRevoked: true }
+        data: { isRevoked: true, revokedAt: new Date() }
       });
       throw new Error("Refresh session is invalid.");
     }
 
     await prisma.userSession.update({
       where: { id: session.id },
-      data: { isRevoked: true }
+      data: { isRevoked: true, revokedAt: new Date() }
     });
 
     const tokens = await createSessionTokens(session.user, {
       ipAddress: req.ip,
-      userAgent: req.get("user-agent")
+      userAgent: req.get("user-agent"),
+      deviceName: session.deviceName ?? parseDeviceName(req.get("user-agent"))
     });
 
     return {
@@ -367,13 +518,29 @@ export const authService = {
   },
 
   async forgotPassword(email: string) {
+    const normalizedEmail = email.toLowerCase();
+    const attemptsKey = `nexus:password-reset-attempts:${normalizedEmail}`;
+    const attempts = await redis.incr(attemptsKey);
+
+    if (attempts === 1) {
+      await redis.expire(attemptsKey, 24 * 60 * 60);
+    }
+
+    if (attempts > 3) {
+      throw new Error("Too many password reset attempts. Please try again tomorrow.");
+    }
+
     const user = await prisma.user.findUnique({
-      where: { email: email.toLowerCase() }
+      where: { email: normalizedEmail }
     });
 
     if (!user) {
       return;
     }
+
+    await prisma.passwordResetToken.deleteMany({
+      where: { userId: user.id }
+    });
 
     const resetToken = await createPasswordResetToken(user.id);
     const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${resetToken}`;
@@ -386,45 +553,74 @@ export const authService = {
   },
 
   async resetPassword(input: { token: string; password: string }) {
-    const tokenHash = hashToken(input.token);
-    const userId = await redis.get(`nexus:password-reset:${tokenHash}`);
+    if (!passwordRegex.test(input.password)) {
+      throw new Error(
+        "Password must be 8-128 chars and include uppercase, lowercase, number and special character."
+      );
+    }
 
-    if (!userId) {
+    const isPwned = await checkPwnedPassword(input.password);
+    if (isPwned) {
+      throw new Error("Password has appeared in a known breach. Choose a safer one.");
+    }
+
+    const tokenHash = hashToken(input.token);
+    const resetToken = await prisma.passwordResetToken.findUnique({
+      where: { tokenHash },
+      include: { user: true }
+    });
+
+    if (!resetToken || resetToken.expiresAt < new Date()) {
+      if (resetToken) {
+        await prisma.passwordResetToken.deleteMany({
+          where: { id: resetToken.id }
+        });
+      }
       throw new Error("Reset token is invalid or expired.");
     }
 
-    const passwordHash = await bcrypt.hash(input.password, env.BCRYPT_ROUNDS);
+    const passwordHash = await hashPassword(input.password);
 
     await prisma.$transaction([
       prisma.user.update({
-        where: { id: userId },
-        data: { passwordHash, twoFactorEnabled: false, twoFactorSecret: null }
+        where: { id: resetToken.userId },
+        data: {
+          passwordHash,
+          twoFactorEnabled: false,
+          twoFactorSecret: null,
+          twoFactorBackupCodes: null
+        }
       }),
       prisma.userSession.updateMany({
-        where: { userId },
-        data: { isRevoked: true }
+        where: { userId: resetToken.userId },
+        data: { isRevoked: true, revokedAt: new Date() }
+      }),
+      prisma.passwordResetToken.deleteMany({
+        where: { userId: resetToken.userId }
       })
     ]);
 
-    await redis.del(`nexus:password-reset:${tokenHash}`);
+    await sendEmail(
+      resetToken.user.email,
+      "Your NEXUS password was changed",
+      passwordChangedEmail(resetToken.user.username)
+    );
   },
 
   async setupTwoFactor(userId: string) {
     const secret = generateTOTPSecret();
     const otpauthUrl = `otpauth://totp/NEXUS:${userId}?secret=${secret}&issuer=NEXUS`;
     const qrCodeUrl = await QRCode.toDataURL(otpauthUrl);
-    const backupCodes = generateBackupCodes();
 
     await redis.setEx(
       `nexus:2fa:setup:${userId}`,
       300,
-      JSON.stringify({ secret, backupCodes })
+      JSON.stringify({ secret })
     );
 
     return {
       secret,
-      qrCodeUrl,
-      backupCodes
+      qrCodeUrl
     };
   },
 
@@ -435,31 +631,34 @@ export const authService = {
       throw new Error("No pending 2FA setup found.");
     }
 
-    const { secret, backupCodes } = JSON.parse(pending) as {
+    const { secret } = JSON.parse(pending) as {
       secret: string;
-      backupCodes: string[];
     };
 
     if (!verifyTOTP(token, secret)) {
       throw new Error("Invalid authentication code.");
     }
 
+    const backupCodes = generateBackupCodes(10).map((code) => ({
+      code,
+      used: false
+    }));
     const encrypted = encryptKey(secret);
 
     await prisma.user.update({
       where: { id: userId },
       data: {
         twoFactorEnabled: true,
-        twoFactorSecret: JSON.stringify(encrypted)
+        twoFactorSecret: JSON.stringify(encrypted),
+        twoFactorBackupCodes: encryptJsonValue(backupCodes)
       }
     });
 
     await redis.del(`nexus:2fa:setup:${userId}`);
-
-    return { backupCodes };
+    return { backupCodes: backupCodes.map((backupCode) => backupCode.code) };
   },
 
-  async disableTwoFactor(userId: string, password: string) {
+  async disableTwoFactor(userId: string, password: string, token: string) {
     const user = await prisma.user.findUnique({
       where: { id: userId }
     });
@@ -468,26 +667,95 @@ export const authService = {
       throw new Error("Password confirmation failed.");
     }
 
-    const validPassword = await bcrypt.compare(password, user.passwordHash);
+    const validPassword = await verifyPassword(password, user.passwordHash);
     if (!validPassword) {
       throw new Error("Password confirmation failed.");
+    }
+
+    const validTwoFactorCode = await verifyStoredTwoFactorCode(user, token);
+    if (!validTwoFactorCode) {
+      throw new Error("Two-factor authentication code is invalid.");
     }
 
     await prisma.user.update({
       where: { id: userId },
       data: {
         twoFactorEnabled: false,
-        twoFactorSecret: null
+        twoFactorSecret: null,
+        twoFactorBackupCodes: null
       }
     });
   },
 
+  async listAdminSessions(userId: string, currentSessionId?: string) {
+    const sessions = await prisma.userSession.findMany({
+      where: {
+        userId,
+        isRevoked: false,
+        expiresAt: { gt: new Date() }
+      },
+      orderBy: {
+        lastActivity: "desc"
+      }
+    });
+
+    return sessions.map((session) => ({
+      id: session.id,
+      ipAddress: session.ipAddress,
+      userAgent: session.userAgent,
+      deviceName: session.deviceName,
+      createdAt: session.createdAt,
+      lastActivity: session.lastActivity,
+      expiresAt: session.expiresAt,
+      isCurrent: session.id === currentSessionId
+    }));
+  },
+
+  async revokeAdminSession(userId: string, sessionId: string) {
+    const session = await prisma.userSession.findFirst({
+      where: {
+        id: sessionId,
+        userId
+      }
+    });
+
+    if (!session) {
+      throw new Error("Session not found.");
+    }
+
+    await prisma.userSession.update({
+      where: { id: session.id },
+      data: {
+        isRevoked: true,
+        revokedAt: new Date()
+      }
+    });
+
+    return { revokedSessionId: session.id };
+  },
+
+  async revokeAllOtherSessions(userId: string, currentSessionId?: string) {
+    const result = await prisma.userSession.updateMany({
+      where: {
+        userId,
+        id: currentSessionId ? { not: currentSessionId } : undefined,
+        isRevoked: false
+      },
+      data: {
+        isRevoked: true,
+        revokedAt: new Date()
+      }
+    });
+
+    return { revokedCount: result.count };
+  },
+
   attachRefreshCookie(res: Response, refreshToken: string) {
-    res.cookie("refreshToken", refreshToken, refreshCookieOptions);
+    setRefreshTokenCookie(res, refreshToken);
   },
 
   clearRefreshCookie(res: Response) {
-    res.clearCookie("refreshToken", refreshCookieOptions);
+    clearTokenCookies(res);
   },
 
   async sendOrderReceipt(email: string, orderNumber: string) {

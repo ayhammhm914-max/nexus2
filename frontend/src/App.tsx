@@ -1,22 +1,18 @@
 import { useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import { CartDrawer } from "./components/cart/CartDrawer";
 import { Footer } from "./components/layout/Footer";
 import { Header } from "./components/layout/Header";
-import { useAuthStore } from "./store/auth.store";
+import { trackPageView } from "./lib/sentry";
 import { useLanguageStore } from "./store/language.store";
 
 export const App = () => {
-  const user = useAuthStore((state) => state.user);
-  const accessToken = useAuthStore((state) => state.accessToken);
-  const refreshToken = useAuthStore((state) => state.refreshToken);
   const language = useLanguageStore((state) => state.language);
+  const location = useLocation();
 
   useEffect(() => {
-    if (user && !accessToken) {
-      void refreshToken();
-    }
-  }, [accessToken, refreshToken, user]);
+    trackPageView(`${location.pathname}${location.search}`);
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
     document.documentElement.lang = language;

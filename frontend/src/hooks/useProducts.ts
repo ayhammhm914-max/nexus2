@@ -6,7 +6,7 @@ import {
   fallbackProductBySlug,
   fallbackRelatedProducts
 } from "../data/fallbackProducts";
-import api from "../lib/api";
+import { storefrontApi } from "../lib/api";
 import type { ApiResponse } from "../types/api.types";
 import type { PaginatedProducts, Product } from "../types/product.types";
 
@@ -18,7 +18,7 @@ export const useProducts = (
     queryKey: ["products", params],
     queryFn: async () => {
       try {
-        const response = await api.get<ApiResponse<PaginatedProducts>>("/products", {
+        const response = await storefrontApi.get<ApiResponse<PaginatedProducts>>("/products", {
           params
         });
         return response.data.data;
@@ -34,7 +34,7 @@ export const useFeaturedProducts = () =>
     queryKey: ["products", "featured"],
     queryFn: async () => {
       try {
-        const response = await api.get<ApiResponse<Product[]>>("/products/featured");
+        const response = await storefrontApi.get<ApiResponse<Product[]>>("/products/featured");
         return response.data.data;
       } catch {
         return fallbackFeaturedProducts();
@@ -48,7 +48,7 @@ export const useHotDeals = () =>
     queryKey: ["products", "hot-deals"],
     queryFn: async () => {
       try {
-        const response = await api.get<ApiResponse<Product[]>>("/products/hot-deals");
+        const response = await storefrontApi.get<ApiResponse<Product[]>>("/products/hot-deals");
         return response.data.data;
       } catch {
         return fallbackHotDeals();
@@ -62,7 +62,7 @@ export const useProduct = (slug: string) =>
     queryKey: ["products", slug],
     queryFn: async () => {
       try {
-        const response = await api.get<ApiResponse<Product>>(`/products/${slug}`);
+        const response = await storefrontApi.get<ApiResponse<Product>>(`/products/${slug}`);
         return response.data.data;
       } catch {
         const fallbackProduct = fallbackProductBySlug(slug);
@@ -80,7 +80,7 @@ export const useRelatedProducts = (productId?: string) =>
     queryKey: ["products", productId, "related"],
     queryFn: async () => {
       try {
-        const response = await api.get<ApiResponse<Product[]>>(`/products/${productId}/related`);
+        const response = await storefrontApi.get<ApiResponse<Product[]>>(`/products/${productId}/related`);
         return response.data.data;
       } catch {
         return fallbackRelatedProducts(productId);

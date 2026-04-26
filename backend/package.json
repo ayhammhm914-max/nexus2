@@ -6,6 +6,9 @@
     "dev": "tsx watch src/app.ts",
     "build": "npx tsc -p tsconfig.json",
     "start": "node dist/app.js",
+    "security:audit": "npm audit --production",
+    "security:audit:fix": "npm audit fix --production",
+    "security:check": "npm audit && npm --prefix ../frontend audit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "tsx prisma/seed.ts",
@@ -67,4 +70,3 @@
     "vitest": "^2.1.4"
   }
 }
-

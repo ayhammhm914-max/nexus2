@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import type { UserRole } from "@prisma/client";
 import { prisma } from "../../config/database";
 import { safeRedisDel, safeRedisGet, safeRedisSetEx } from "../../config/redis";
 import { encryptKey, hashToken } from "../../utils/crypto.utils";
@@ -45,6 +46,12 @@ const buildSearchText = (input: {
 
     return `${raw.toLowerCase()} ${normalized}`.trim();
   })();
+
+const assertAdminRole = (role?: UserRole) => {
+  if (role !== "ADMIN" && role !== "SUPERADMIN") {
+    throw new Error("Admin authorization required.");
+  }
+};
 
 const clearProductCaches = async (slug?: string) => {
   const keys = ["nexus:products:featured", "nexus:products:hot-deals", "nexus:products:new-arrivals"];
@@ -207,7 +214,14 @@ export const productsService = {
     });
   },
 
-  async create(data: Record<string, unknown>, actorId?: string, meta?: { ip?: string; userAgent?: string }) {
+  async create(
+    data: Record<string, unknown>,
+    actorId?: string,
+    actorRole?: UserRole,
+    meta?: { ip?: string; userAgent?: string }
+  ) {
+    assertAdminRole(actorRole);
+
     const baseSlug = slugify(String(data.name));
     let slug = baseSlug;
     let counter = 1;
@@ -264,8 +278,11 @@ export const productsService = {
     id: string,
     data: Record<string, unknown>,
     actorId?: string,
+    actorRole?: UserRole,
     meta?: { ip?: string; userAgent?: string }
   ) {
+    assertAdminRole(actorRole);
+
     const previous = await prisma.product.findUniqueOrThrow({ where: { id } });
     const platform =
       typeof data.platformId === "string"
@@ -319,7 +336,14 @@ export const productsService = {
     return product;
   },
 
-  async remove(id: string, actorId?: string, meta?: { ip?: string; userAgent?: string }) {
+  async remove(
+    id: string,
+    actorId?: string,
+    actorRole?: UserRole,
+    meta?: { ip?: string; userAgent?: string }
+  ) {
+    assertAdminRole(actorRole);
+
     const previous = await prisma.product.findUniqueOrThrow({ where: { id } });
     const product = await prisma.product.update({
       where: { id },
@@ -348,8 +372,11 @@ export const productsService = {
     keys: string[],
     batchLabel: string,
     actorId?: string,
+    actorRole?: UserRole,
     meta?: { ip?: string; userAgent?: string }
   ) {
+    assertAdminRole(actorRole);
+
     const batch = await prisma.inventoryBatch.create({
       data: {
         label: batchLabel,

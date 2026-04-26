@@ -1,7 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import type { ZodSchema } from "zod";
 import { ZodError } from "zod";
-import { errorResponse } from "../utils/response.utils";
 
 type RequestSchema = {
   body?: ZodSchema;
@@ -9,7 +8,15 @@ type RequestSchema = {
   params?: ZodSchema;
 };
 
-export const validate =
+const formatZodError = (error: ZodError) =>
+  error.issues
+    .map((issue) => {
+      const field = issue.path.length ? issue.path.join(".") : "request";
+      return `${field}: ${issue.message}`;
+    })
+    .join("; ");
+
+export const validateRequest =
   (schema: RequestSchema) =>
   (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -28,18 +35,24 @@ export const validate =
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        return res.status(422).json(
-          errorResponse(
-            "VALIDATION_ERROR",
-            "Request validation failed.",
-            error.flatten()
-          )
-        );
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: "VALIDATION_ERROR",
+            message: formatZodError(error),
+            details: error.flatten()
+          }
+        });
       }
 
-      return res
-        .status(422)
-        .json(errorResponse("VALIDATION_ERROR", "Invalid request payload."));
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: "VALIDATION_ERROR",
+          message: "Invalid request payload."
+        }
+      });
     }
   };
 
+export const validate = validateRequest;

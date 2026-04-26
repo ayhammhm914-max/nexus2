@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { authMiddleware } from "../../middleware/auth.middleware";
+import { rateLimiters } from "../../middleware/rateLimit.middleware";
 import { requireRole } from "../../middleware/role.middleware";
 import { validate } from "../../middleware/validate.middleware";
 import { asyncHandler } from "../../utils/asyncHandler.utils";
@@ -23,7 +24,7 @@ productsRoutes.get("/new-arrivals", asyncHandler(productsController.newArrivals)
 productsRoutes.get("/:slug", validate(productSlugSchema), asyncHandler(productsController.bySlug));
 productsRoutes.get("/:id/related", validate(productIdSchema), asyncHandler(productsController.related));
 
-adminProductsRoutes.use(authMiddleware, requireRole("ADMIN", "SUPERADMIN"));
+adminProductsRoutes.use(authMiddleware, requireRole("ADMIN", "SUPERADMIN"), rateLimiters.admin);
 adminProductsRoutes.post("/", validate(createProductSchema), asyncHandler(productsController.create));
 adminProductsRoutes.put("/:id", validate({ ...productIdSchema, ...updateProductSchema }), asyncHandler(productsController.update));
 adminProductsRoutes.delete("/:id", validate(productIdSchema), asyncHandler(productsController.remove));

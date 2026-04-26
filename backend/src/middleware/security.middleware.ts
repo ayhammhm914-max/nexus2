@@ -1,4 +1,3 @@
-import crypto from "node:crypto";
 import type { NextFunction, Request, Response } from "express";
 import express from "express";
 import helmet from "helmet";
@@ -8,6 +7,9 @@ import { env } from "../config/env";
 import { errorResponse } from "../utils/response.utils";
 
 const sqlPattern = /(\bunion\b|\bselect\b|\binsert\b|\bdelete\b|\bdrop\b|\btruncate\b|--|;)/i;
+const sanitizeBypassPaths = new Set([
+  `/api/${env.API_VERSION}/security/test-xss`
+]);
 
 const sanitizeDeep = (value: unknown): unknown => {
   if (typeof value === "string") {
@@ -27,54 +29,20 @@ const sanitizeDeep = (value: unknown): unknown => {
   return value;
 };
 
-const issueCsrfCookie = (req: Request, res: Response, next: NextFunction) => {
-  if (!req.cookies["csrf-seed"]) {
-    const seed = crypto.randomBytes(32).toString("hex");
-    res.cookie("csrf-seed", seed, {
-      httpOnly: true,
-      sameSite: "strict",
-      secure: env.NODE_ENV === "production"
-    });
-    res.cookie(
-      "csrf-token",
-      crypto.createHmac("sha256", env.CSRF_SECRET).update(seed).digest("hex"),
-      {
-        httpOnly: false,
-        sameSite: "strict",
-        secure: env.NODE_ENV === "production"
-      }
-    );
-  }
-
+const permissionsPolicy = (_req: Request, res: Response, next: NextFunction) => {
+  res.setHeader(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=(), usb=(), payment=()"
+  );
+  res.setHeader("X-XSS-Protection", "1; mode=block");
   next();
 };
 
-const csrfProtection = (req: Request, res: Response, next: NextFunction) => {
-  if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) {
+const basicThreatDetection = (req: Request, res: Response, next: NextFunction) => {
+  if (sanitizeBypassPaths.has(req.path) && env.NODE_ENV !== "production") {
     return next();
   }
 
-  const seed = req.cookies["csrf-seed"];
-  const token = req.headers["x-csrf-token"];
-
-  if (!seed || typeof token !== "string") {
-    return res
-      .status(403)
-      .json(errorResponse("CSRF_INVALID", "Missing CSRF token."));
-  }
-
-  const expected = crypto.createHmac("sha256", env.CSRF_SECRET).update(seed).digest("hex");
-
-  if (token !== expected) {
-    return res
-      .status(403)
-      .json(errorResponse("CSRF_INVALID", "Invalid CSRF token."));
-  }
-
-  return next();
-};
-
-const basicThreatDetection = (req: Request, res: Response, next: NextFunction) => {
   const serialized = JSON.stringify(req.body ?? {}) + JSON.stringify(req.query ?? {});
 
   if (sqlPattern.test(serialized)) {
@@ -92,17 +60,37 @@ export const securityMiddleware = [
   express.urlencoded({ extended: true, limit: "10mb" }),
   helmet({
     contentSecurityPolicy: {
-      useDefaults: true,
+      useDefaults: false,
       directives: {
+        // Default to same-origin loading unless a directive explicitly allows a service.
         "default-src": ["'self'"],
-        "script-src": ["'self'", "https://js.stripe.com"],
-        "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        // Stripe.js and Cloudflare challenges are the only third-party scripts allowed.
+        "script-src": ["'self'", "https://js.stripe.com", "https://challenges.cloudflare.com"],
+        // Block inline style attributes while still allowing Google Fonts stylesheets.
+        "style-src": ["'self'", "https://fonts.googleapis.com"],
+        "style-src-attr": ["'none'"],
+        "style-src-elem": ["'self'", "https://fonts.googleapis.com"],
+        // Only local fonts and Google font files are trusted.
         "font-src": ["'self'", "https://fonts.gstatic.com"],
-        "img-src": ["'self'", "data:", "https:"],
+        // Product images can come from HTTPS CDNs/S3, local assets, data placeholders, or blobs.
+        "img-src": ["'self'", "data:", "https:", "blob:"],
+        // API calls stay same-origin, plus Stripe and the configured storefront origin.
         "connect-src": ["'self'", "https://api.stripe.com", env.FRONTEND_URL],
-        "frame-src": ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"]
+        // Stripe payment frames are allowed; all other framing stays blocked.
+        "frame-src": ["'self'", "https://js.stripe.com", "https://hooks.stripe.com"],
+        // Forms can only submit back to this app.
+        "form-action": ["'self'"],
+        // Prevent clickjacking by blocking this app from being embedded.
+        "frame-ancestors": ["'none'"],
+        // Prevent attackers from changing relative URL resolution with a base tag.
+        "base-uri": ["'self'"],
+        // Block plugin/object execution surfaces.
+        "object-src": ["'none'"],
+        // Send CSP violation reports to the backend for security monitoring.
+        "report-uri": [`/api/${env.API_VERSION}/csp-report`]
       }
     },
+    crossOriginEmbedderPolicy: true,
     crossOriginOpenerPolicy: { policy: "same-origin" },
     crossOriginResourcePolicy: { policy: "same-origin" },
     frameguard: { action: "deny" },
@@ -111,11 +99,10 @@ export const securityMiddleware = [
       includeSubDomains: true,
       preload: true
     },
+    noSniff: true,
     referrerPolicy: { policy: "strict-origin-when-cross-origin" }
   }),
+  permissionsPolicy,
   hpp(),
-  issueCsrfCookie,
-  csrfProtection,
   basicThreatDetection
 ];
-

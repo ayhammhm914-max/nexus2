@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { type FormEvent, useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { useAuthStore } from "../../store/auth.store";
+import { useAuth } from "../../features/auth/context/AuthContext";
 import { useCartStore } from "../../store/cart.store";
 import { useLanguageStore, useTranslation } from "../../store/language.store";
 import { useUIStore } from "../../store/ui.store";
@@ -26,8 +26,7 @@ export const Header = () => {
     state.items.reduce((sum, item) => sum + item.quantity, 0)
   );
   const openCart = useCartStore((state) => state.openCart);
-  const user = useAuthStore((state) => state.user);
-  const logout = useAuthStore((state) => state.logout);
+  const { user, isAuthenticated, logout } = useAuth();
   const announcementDismissed = useUIStore((state) => state.announcementDismissed);
   const dismissAnnouncement = useUIStore((state) => state.dismissAnnouncement);
   const navLinks = [
@@ -152,15 +151,23 @@ export const Header = () => {
               ) : null}
             </button>
 
-            {user ? (
-              <button
-                onClick={() => void logout()}
-                className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-white md:flex"
-                type="button"
-              >
-                <UserCircle2 className="h-4 w-4 text-primary" />
-                {t("header.myVault")}
-              </button>
+            {isAuthenticated && user ? (
+              <div className="hidden items-center gap-3 md:flex">
+                <Link
+                  to="/dashboard"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-white transition hover:border-primary/30"
+                >
+                  <UserCircle2 className="h-4 w-4 text-primary" />
+                  {user.name}
+                </Link>
+                <button
+                  onClick={() => void logout()}
+                  className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-white transition hover:border-primary/30 hover:text-primary"
+                  type="button"
+                >
+                  Logout
+                </button>
+              </div>
             ) : (
               <div className="hidden gap-3 md:flex">
                 <Link to="/login">
@@ -233,13 +240,35 @@ export const Header = () => {
             </nav>
 
             <div className="mt-8 border-t border-white/10 pt-6">
-              <Link
-                to="/register"
-                onClick={() => setMobileOpen(false)}
-                className="inline-flex rounded-full bg-primary px-5 py-3 font-semibold text-slate-950"
-              >
-                {t("header.createAccount")}
-              </Link>
+              {isAuthenticated && user ? (
+                <div className="flex flex-col gap-3">
+                  <Link
+                    to="/dashboard"
+                    onClick={() => setMobileOpen(false)}
+                    className="inline-flex rounded-full bg-primary px-5 py-3 font-semibold text-slate-950"
+                  >
+                    Dashboard
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setMobileOpen(false);
+                      void logout();
+                    }}
+                    className="inline-flex rounded-full border border-white/10 px-5 py-3 font-semibold text-white"
+                    type="button"
+                  >
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <Link
+                  to="/register"
+                  onClick={() => setMobileOpen(false)}
+                  className="inline-flex rounded-full bg-primary px-5 py-3 font-semibold text-slate-950"
+                >
+                  {t("header.createAccount")}
+                </Link>
+              )}
             </div>
           </motion.div>
         ) : null}

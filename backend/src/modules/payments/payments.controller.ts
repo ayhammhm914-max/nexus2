@@ -6,16 +6,37 @@ import { ordersService } from "../orders/orders.service";
 export const paymentsController = {
   stripeWebhook: async (req: Request, res: Response) => {
     const signature = req.headers["stripe-signature"];
+    const timestampHeader = req.headers["stripe-timestamp"];
 
     if (typeof signature !== "string") {
       return res.status(400).send("Missing Stripe signature.");
     }
 
-    const event = stripe.webhooks.constructEvent(
-      req.body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET || ""
-    );
+    const signatureTimestamp =
+      typeof timestampHeader === "string"
+        ? Number.parseInt(timestampHeader, 10)
+        : Number.parseInt(signature.split(",").find((part) => part.trim().startsWith("t="))?.split("=")[1] ?? "", 10);
+    const currentTimestamp = Math.floor(Date.now() / 1000);
+
+    // Rejecting stale webhook timestamps narrows the replay window for captured webhook payloads.
+    if (
+      Number.isNaN(signatureTimestamp) ||
+      Math.abs(currentTimestamp - signatureTimestamp) > 300
+    ) {
+      return res.status(400).send("Webhook timestamp too old");
+    }
+
+    let event: ReturnType<typeof stripe.webhooks.constructEvent>;
+
+    try {
+      event = stripe.webhooks.constructEvent(
+        req.body,
+        signature,
+        process.env.STRIPE_WEBHOOK_SECRET || ""
+      );
+    } catch {
+      return res.status(400).send("Invalid Stripe signature.");
+    }
 
     const idempotencyKey = `nexus:webhook:${event.id}`;
     const alreadyProcessed = await redis.get(idempotencyKey);
@@ -23,6 +44,7 @@ export const paymentsController = {
       return res.json({ received: true, duplicate: true });
     }
 
+    // Idempotency tracking prevents duplicate deliveries from triggering the same payment workflow twice.
     if (event.type === "payment_intent.succeeded") {
       await ordersService.completeOrderFromPaymentIntent(event.data.object.id);
     }
@@ -36,4 +58,3 @@ export const paymentsController = {
     return res.json({ received: true });
   }
 };
-

@@ -59,9 +59,14 @@ export const passwordResetEmail = (username: string, resetUrl: string, expiresIn
     ctaUrl: resetUrl
   });
 
+export const passwordChangedEmail = (username: string) =>
+  shell({
+    title: `Your password was changed, ${username}`,
+    body: "Your NEXUS password was updated successfully. All existing sessions were revoked so your account stays protected. If this was not you, contact support immediately."
+  });
+
 export const orderConfirmationEmail = (orderNumber: string) =>
   shell({
     title: `Order ${orderNumber} confirmed`,
     body: "Your payment was successful. For security, your keys are available from your authenticated order page inside NEXUS."
   });
-

@@ -1,10 +1,10 @@
-import * as Sentry from "@sentry/node";
 import type { NextFunction, Request, Response } from "express";
 import { JsonWebTokenError, TokenExpiredError } from "jsonwebtoken";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { ZodError } from "zod";
 import { logger } from "../config/logger";
 import { env } from "../config/env";
+import { captureServerException } from "../config/sentry";
 import { errorResponse } from "../utils/response.utils";
 
 export const notFoundMiddleware = (_req: Request, res: Response) => {
@@ -13,7 +13,7 @@ export const notFoundMiddleware = (_req: Request, res: Response) => {
 
 export const errorHandlerMiddleware = (
   error: unknown,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ) => {
@@ -44,7 +44,7 @@ export const errorHandlerMiddleware = (
   }
 
   logger.error(error instanceof Error ? error.stack ?? error.message : String(error));
-  Sentry.captureException(error);
+  captureServerException(error, req);
 
   return res.status(500).json(
     errorResponse(

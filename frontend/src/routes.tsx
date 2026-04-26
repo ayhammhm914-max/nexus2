@@ -1,6 +1,8 @@
 import { createBrowserRouter } from "react-router-dom";
 import { App } from "./App";
+import { ProtectedRoute } from "./features/auth/components/ProtectedRoute";
 import { CartPage } from "./pages/CartPage";
+import { DashboardPage } from "./pages/DashboardPage";
 import { HomePage } from "./pages/HomePage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
@@ -38,10 +40,17 @@ export const router = createBrowserRouter([
         element: <RegisterPage />
       },
       {
+        path: "dashboard",
+        element: (
+          <ProtectedRoute>
+            <DashboardPage />
+          </ProtectedRoute>
+        )
+      },
+      {
         path: "*",
         element: <NotFoundPage />
       }
     ]
   }
 ]);
-

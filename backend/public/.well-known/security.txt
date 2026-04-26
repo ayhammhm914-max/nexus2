@@ -1,0 +1,5 @@
+Contact: security@nexus.gg
+Expires: 2027-04-25T00:00:00.000Z
+Preferred-Languages: en
+Policy: https://nexus.gg/security-policy
+Canonical: https://nexus.gg/.well-known/security.txt

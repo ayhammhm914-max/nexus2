@@ -2,6 +2,10 @@ import "dotenv/config";
 import { z } from "zod";
 
 const normalizeMultiline = (value: string) => value.replace(/\\n/g, "\n");
+const optionalUrl = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  z.string().url().optional()
+);
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -9,8 +13,17 @@ const envSchema = z.object({
   API_VERSION: z.string().default("v1"),
   FRONTEND_URL: z.string().url(),
   APP_BASE_URL: z.string().url(),
+  SECURITY_CONTACT_EMAIL: z.string().email().default("security@nexus.gg"),
+  SECURITY_POLICY_URL: z.string().url().default("https://nexus.gg/security-policy"),
+  SECURITY_CANONICAL_URL: z
+    .string()
+    .url()
+    .default("https://nexus.gg/.well-known/security.txt"),
   DATABASE_URL: z.string().min(1),
+  DATABASE_URL_UNPOOLED: z.string().optional().default(""),
   REDIS_URL: z.string().min(1),
+  STAGING_URL: optionalUrl,
+  PREVIEW_URL: optionalUrl,
   JWT_ACCESS_PRIVATE_KEY: z.string().min(1),
   JWT_ACCESS_PUBLIC_KEY: z.string().min(1),
   JWT_REFRESH_PRIVATE_KEY: z.string().min(1),
@@ -52,10 +65,23 @@ const envSchema = z.object({
     .string()
     .default("false")
     .transform((value) => value === "true"),
+  FORCE_HTTPS: z
+    .string()
+    .default("true")
+    .transform((value) => value === "true"),
   CSRF_SECRET: z.string().min(1)
 });
 
 const parsed = envSchema.parse(process.env);
+const isPostgresDatabase = /^postgres(ql)?:\/\//i.test(parsed.DATABASE_URL);
+
+if (
+  parsed.NODE_ENV === "production" &&
+  isPostgresDatabase &&
+  !parsed.DATABASE_URL.includes("sslmode=require")
+) {
+  throw new Error("DATABASE_URL must include sslmode=require in production for PostgreSQL.");
+}
 
 export const env = {
   ...parsed,
@@ -64,4 +90,3 @@ export const env = {
   JWT_REFRESH_PRIVATE_KEY: normalizeMultiline(parsed.JWT_REFRESH_PRIVATE_KEY),
   JWT_REFRESH_PUBLIC_KEY: normalizeMultiline(parsed.JWT_REFRESH_PUBLIC_KEY)
 };
-

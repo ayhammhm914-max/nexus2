@@ -21,7 +21,7 @@ export const loginSchema = {
     .object({
       email: z.string().email(),
       password: z.string().min(8),
-      twoFactorCode: z.string().length(6).optional()
+      twoFactorCode: z.string().min(6).max(12).regex(/^[A-Za-z0-9]+$/).optional()
     })
     .strict()
 };
@@ -62,8 +62,8 @@ export const verifyTwoFactorSchema = {
 export const disableTwoFactorSchema = {
   body: z
     .object({
-      password: z.string().min(8)
+      password: z.string().min(8),
+      token: z.string().min(6).max(12).regex(/^[A-Za-z0-9]+$/)
     })
     .strict()
 };
-
