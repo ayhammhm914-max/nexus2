@@ -17,7 +17,7 @@ export const HomePage = () => {
   const { t } = useTranslation();
   const featured = useFeaturedProducts();
   const deals = useHotDeals();
-  const catalog = useProducts({ limit: 50, sort: "popular" });
+  const catalog = useProducts({ limit: 1200, sort: "popular" });
 
   const catalogItems = catalog.data?.items ?? [];
   const heroProducts = uniqueProducts([
@@ -31,6 +31,7 @@ export const HomePage = () => {
     ...catalogItems.filter((product) => product.isHot || product.isNew),
     ...catalogItems
   ]).slice(0, 4);
+  const consoleGames = byCategory(catalogItems, "console-games").slice(0, 4);
   const giftCards = byCategory(catalogItems, "gift-cards").slice(0, 4);
   const subscriptions = byCategory(catalogItems, "subscriptions").slice(0, 4);
   const inGameCurrency = byCategory(catalogItems, "in-game-currency").slice(0, 4);
@@ -54,6 +55,15 @@ export const HomePage = () => {
       />
 
       <PlatformShowcase />
+
+      <ProductShelf
+        eyebrow={t("shelf.console.eyebrow")}
+        title={t("shelf.console.title")}
+        description={t("shelf.console.description")}
+        products={consoleGames}
+        linkTo="/store?category=console-games"
+        linkLabel={t("shelf.console.link")}
+      />
 
       <ProductShelf
         eyebrow={t("shelf.trending.eyebrow")}

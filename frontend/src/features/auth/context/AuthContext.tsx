@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import api from "../../../lib/api";
+import api, { authPath } from "../../../lib/api";
 import {
   clearAccessToken,
   getAccessToken,
@@ -9,8 +9,9 @@ import {
 } from "../token";
 
 export type AuthUser = {
-  id: number;
-  name: string;
+  id: number | string;
+  name?: string;
+  username?: string;
   email: string;
 };
 
@@ -18,7 +19,7 @@ type AuthContextValue = {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  setAuthSession: (user: AuthUser, token: string) => void;
+  setAuthSession: (user: AuthUser, token?: string) => void;
   logout: () => Promise<void>;
 };
 
@@ -34,7 +35,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // This flow keeps JWTs in memory only, so the best silent restore available
     // on mount is rehydrating the in-memory session while the tab stays alive.
-    if (existingToken && existingUser) {
+    if (existingUser && (existingToken || existingUser.username)) {
       setUser(existingUser);
     } else {
       clearAccessToken();
@@ -45,15 +46,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(false);
   }, []);
 
-  const setAuthSession = (nextUser: AuthUser, token: string) => {
-    setAccessToken(token);
+  const setAuthSession = (nextUser: AuthUser, token?: string) => {
+    setAccessToken(token ?? "");
     setMemoryUser(nextUser);
     setUser(nextUser);
   };
 
   const logout = async () => {
     try {
-      await api.post("/api/auth/logout");
+      await api.post(authPath("/auth/logout"));
     } finally {
       clearAccessToken();
       setMemoryUser(null);
@@ -65,7 +66,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const value = useMemo(
     () => ({
       user,
-      isAuthenticated: Boolean(user && getAccessToken()),
+      isAuthenticated: Boolean(user),
       isLoading,
       setAuthSession,
       logout

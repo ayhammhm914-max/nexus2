@@ -86,7 +86,7 @@ const platformTabs: CatalogTab[] = [
     links: [
       {
         label: "PlayStation Games",
-        to: "/store?category=pc-games&platform=playstation",
+        to: "/store?category=console-games&platform=playstation",
         description: "Console-ready game keys"
       },
       {
@@ -115,7 +115,7 @@ const platformTabs: CatalogTab[] = [
     links: [
       {
         label: "Xbox Games",
-        to: "/store?category=pc-games&platform=xbox",
+        to: "/store?category=console-games&platform=xbox",
         description: "Xbox game codes"
       },
       {
@@ -144,7 +144,7 @@ const platformTabs: CatalogTab[] = [
     links: [
       {
         label: "Nintendo Games",
-        to: "/store?category=pc-games&platform=nintendo",
+        to: "/store?category=console-games&platform=nintendo",
         description: "Switch-ready game codes"
       },
       {
@@ -167,10 +167,40 @@ const platformTabs: CatalogTab[] = [
   }
 ];
 
+const consoleGamesTab: CatalogTab = {
+  key: "console-games",
+  label: "CONSOLE",
+  title: "Console games",
+  viewAllTo: "/store?category=console-games",
+  links: [
+    {
+      label: "All Console Games",
+      to: "/store?category=console-games",
+      description: "PlayStation, Xbox and Nintendo"
+    },
+    {
+      label: "PlayStation Games",
+      to: "/store?category=console-games&platform=playstation",
+      description: "PS4 and PS5 digital games"
+    },
+    {
+      label: "Xbox Games",
+      to: "/store?category=console-games&platform=xbox",
+      description: "Xbox digital game codes"
+    },
+    {
+      label: "Nintendo Games",
+      to: "/store?category=console-games&platform=nintendo",
+      description: "Switch-ready game codes"
+    }
+  ],
+  featured: firstProducts((product) => product.category.slug === "console-games")
+};
+
 const utilityLinks = [
   { label: "DEALS", to: "/store?sort=sale" },
-  { label: "LATEST GAMES", to: "/store?category=pc-games" },
-  { label: "PRE-ORDER", to: "/store?category=pc-games" }
+  { label: "LATEST GAMES", to: "/store?category=console-games" },
+  { label: "PRE-ORDER", to: "/store?type=PREORDER" }
 ];
 
 const giftMenuColumns: GiftMenuColumn[] = [
@@ -216,7 +246,9 @@ const giftMenuColumns: GiftMenuColumn[] = [
 ];
 
 const desktopMenuOrder = [
-  ...platformTabs,
+  platformTabs[0],
+  consoleGamesTab,
+  ...platformTabs.slice(1),
   {
     key: "gift-cards",
     label: "GIFT CARDS",

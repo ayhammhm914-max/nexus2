@@ -11,6 +11,13 @@ const platformCards = [
     icon: Gamepad2
   },
   {
+    to: "/store?category=console-games",
+    titleKey: "platform.card5.title",
+    bodyKey: "platform.card5.body",
+    labelKey: "platform.card5.label",
+    icon: Gamepad2
+  },
+  {
     to: "/store?category=gift-cards",
     titleKey: "platform.card2.title",
     bodyKey: "platform.card2.body",

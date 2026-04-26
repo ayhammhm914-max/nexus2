@@ -8,8 +8,9 @@ export const ProductsPage = () => {
   const params = Object.fromEntries(searchParams.entries());
   const products = useProducts({
     ...params,
-    limit: params.limit ?? 24
+    limit: params.limit ?? 1200
   });
+  const productsData = products.data;
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6">
@@ -21,12 +22,17 @@ export const ProductsPage = () => {
             Browse single-seller stock across keys, subscriptions, wallet top-ups and in-game currency.
           </p>
         </div>
+        {productsData ? (
+          <div className="rounded-full border border-primary/25 bg-primary/10 px-5 py-3 text-sm font-semibold text-white">
+            Showing {productsData.items.length} of {productsData.meta.total} products
+          </div>
+        ) : null}
       </div>
 
       {products.isLoading ? (
         <LoadingSpinner />
       ) : (
-        <ProductGrid products={products.data?.items ?? []} />
+        <ProductGrid products={productsData?.items ?? []} />
       )}
     </section>
   );
