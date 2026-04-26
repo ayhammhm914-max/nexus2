@@ -19,26 +19,30 @@ import { useCartStore } from "../../store/cart.store";
 import { useLanguageStore, useTranslation } from "../../store/language.store";
 import { useUIStore } from "../../store/ui.store";
 import { Button } from "../ui/Button";
+import type { TranslationKey } from "../../i18n/translations";
 
 type CatalogLink = {
-  label: string;
+  label?: string;
+  labelKey?: TranslationKey;
   to: string;
   description?: string;
+  descriptionKey?: TranslationKey;
 };
 
 type CatalogTab = {
   key: string;
-  label: string;
-  title: string;
+  labelKey: TranslationKey;
+  titleKey: TranslationKey;
   viewAllTo: string;
   links: CatalogLink[];
   featured: Product[];
 };
 
 type GiftMenuColumn = {
-  title: string;
+  titleKey: TranslationKey;
   links: Array<{
-    label: string;
+    label?: string;
+    labelKey?: TranslationKey;
     to: string;
   }>;
 };
@@ -51,116 +55,116 @@ const firstProducts = (predicate: (product: Product) => boolean, limit = 2) =>
 const platformTabs: CatalogTab[] = [
   {
     key: "pc",
-    label: "PC",
-    title: "PC catalog",
+    labelKey: "header.menu.pc.label",
+    titleKey: "header.menu.pc.title",
     viewAllTo: "/store?category=pc-games",
     links: [
       {
-        label: "PC Games",
+        labelKey: "header.menu.pc.games",
         to: "/store?category=pc-games",
-        description: "Full digital games"
+        descriptionKey: "header.menu.pc.gamesDesc"
       },
       {
-        label: "Steam Games",
+        labelKey: "header.menu.pc.steam",
         to: "/store?category=pc-games&platform=steam",
-        description: "Steam library keys"
+        descriptionKey: "header.menu.pc.steamDesc"
       },
       {
-        label: "Wallet Top-Ups",
+        labelKey: "header.menu.pc.wallet",
         to: "/store?category=gift-cards",
-        description: "Store credit and balance"
+        descriptionKey: "header.menu.pc.walletDesc"
       },
       {
-        label: "In-Game Currency",
+        labelKey: "header.menu.pc.currency",
         to: "/store?category=in-game-currency",
-        description: "Fast top-ups and points"
+        descriptionKey: "header.menu.pc.currencyDesc"
       }
     ],
     featured: firstProducts((product) => product.category.slug === "pc-games")
   },
   {
     key: "playstation",
-    label: "PLAYSTATION",
-    title: "PlayStation digital store",
+    labelKey: "header.menu.playstation.label",
+    titleKey: "header.menu.playstation.title",
     viewAllTo: "/store?platform=playstation",
     links: [
       {
-        label: "PlayStation Games",
+        labelKey: "header.menu.playstation.games",
         to: "/store?category=console-games&platform=playstation",
-        description: "Console-ready game keys"
+        descriptionKey: "header.menu.playstation.gamesDesc"
       },
       {
-        label: "PlayStation Gift Cards",
+        labelKey: "header.menu.playstation.cards",
         to: "/store?category=gift-cards&platform=playstation",
-        description: "PSN and wallet credit"
+        descriptionKey: "header.menu.playstation.cardsDesc"
       },
       {
-        label: "PlayStation Plus",
+        labelKey: "header.menu.playstation.plus",
         to: "/store?category=subscriptions&platform=playstation",
-        description: "Membership access"
+        descriptionKey: "header.menu.playstation.plusDesc"
       },
       {
-        label: "PlayStation DLC",
+        labelKey: "header.menu.playstation.dlc",
         to: "/store?platform=playstation",
-        description: "Add-ons and extra content"
+        descriptionKey: "header.menu.playstation.dlcDesc"
       }
     ],
     featured: firstProducts((product) => product.platform.slug === "playstation")
   },
   {
     key: "xbox",
-    label: "XBOX",
-    title: "Xbox digital store",
+    labelKey: "header.menu.xbox.label",
+    titleKey: "header.menu.xbox.title",
     viewAllTo: "/store?platform=xbox",
     links: [
       {
-        label: "Xbox Games",
+        labelKey: "header.menu.xbox.games",
         to: "/store?category=console-games&platform=xbox",
-        description: "Xbox game codes"
+        descriptionKey: "header.menu.xbox.gamesDesc"
       },
       {
-        label: "Xbox Game Pass",
+        labelKey: "header.menu.xbox.pass",
         to: "/store?category=subscriptions&platform=xbox",
-        description: "Game Pass and memberships"
+        descriptionKey: "header.menu.xbox.passDesc"
       },
       {
-        label: "Xbox Gift Cards",
+        labelKey: "header.menu.xbox.cards",
         to: "/store?category=gift-cards&platform=xbox",
-        description: "Wallet top-ups"
+        descriptionKey: "header.menu.xbox.cardsDesc"
       },
       {
-        label: "Xbox Add Ons",
+        labelKey: "header.menu.xbox.addons",
         to: "/store?platform=xbox",
-        description: "Extras and live content"
+        descriptionKey: "header.menu.xbox.addonsDesc"
       }
     ],
     featured: firstProducts((product) => product.platform.slug === "xbox")
   },
   {
     key: "nintendo",
-    label: "NINTENDO",
-    title: "Nintendo digital store",
+    labelKey: "header.menu.nintendo.label",
+    titleKey: "header.menu.nintendo.title",
     viewAllTo: "/store?platform=nintendo",
     links: [
       {
-        label: "Nintendo Games",
+        labelKey: "header.menu.nintendo.games",
         to: "/store?category=console-games&platform=nintendo",
-        description: "Switch-ready game codes"
+        descriptionKey: "header.menu.nintendo.gamesDesc"
       },
       {
-        label: "Nintendo eShop Gift Cards",
+        labelKey: "header.menu.nintendo.cards",
         to: "/store?category=gift-cards&platform=nintendo",
-        description: "Fast eShop credit"
+        descriptionKey: "header.menu.nintendo.cardsDesc"
       },
       {
-        label: "Nintendo Switch Online",
+        labelKey: "header.menu.nintendo.online",
         to: "/store?category=subscriptions&platform=nintendo",
-        description: "Membership access"
+        descriptionKey: "header.menu.nintendo.onlineDesc"
       },
       {
-        label: "Nintendo Add Ons",
+        labelKey: "header.menu.nintendo.addons",
         to: "/store?platform=nintendo",
-        description: "Extras and platform credit"
+        descriptionKey: "header.menu.nintendo.addonsDesc"
       }
     ],
     featured: firstProducts((product) => product.platform.slug === "nintendo", 1)
@@ -169,43 +173,43 @@ const platformTabs: CatalogTab[] = [
 
 const consoleGamesTab: CatalogTab = {
   key: "console-games",
-  label: "CONSOLE",
-  title: "Console games",
+  labelKey: "header.menu.console.label",
+  titleKey: "header.menu.console.title",
   viewAllTo: "/store?category=console-games",
   links: [
     {
-      label: "All Console Games",
+      labelKey: "header.menu.console.all",
       to: "/store?category=console-games",
-      description: "PlayStation, Xbox and Nintendo"
+      descriptionKey: "header.menu.console.allDesc"
     },
     {
-      label: "PlayStation Games",
+      labelKey: "header.menu.console.playstation",
       to: "/store?category=console-games&platform=playstation",
-      description: "PS4 and PS5 digital games"
+      descriptionKey: "header.menu.console.playstationDesc"
     },
     {
-      label: "Xbox Games",
+      labelKey: "header.menu.console.xbox",
       to: "/store?category=console-games&platform=xbox",
-      description: "Xbox digital game codes"
+      descriptionKey: "header.menu.console.xboxDesc"
     },
     {
-      label: "Nintendo Games",
+      labelKey: "header.menu.console.nintendo",
       to: "/store?category=console-games&platform=nintendo",
-      description: "Switch-ready game codes"
+      descriptionKey: "header.menu.console.nintendoDesc"
     }
   ],
   featured: firstProducts((product) => product.category.slug === "console-games")
 };
 
-const utilityLinks = [
-  { label: "DEALS", to: "/store?sort=sale" },
-  { label: "LATEST GAMES", to: "/store?category=console-games" },
-  { label: "PRE-ORDER", to: "/store?type=PREORDER" }
+const utilityLinks: Array<{ labelKey: TranslationKey; to: string }> = [
+  { labelKey: "header.utility.deals", to: "/store?sort=sale" },
+  { labelKey: "header.utility.latestGames", to: "/store?category=console-games" },
+  { labelKey: "header.utility.preorder", to: "/store?type=PREORDER" }
 ];
 
 const giftMenuColumns: GiftMenuColumn[] = [
   {
-    title: "Platform Credit",
+    titleKey: "header.gift.platformCredit",
     links: fallbackProducts
       .filter((product) => product.category.slug === "gift-cards")
       .slice(0, 4)
@@ -215,7 +219,7 @@ const giftMenuColumns: GiftMenuColumn[] = [
       }))
   },
   {
-    title: "Memberships",
+    titleKey: "header.gift.memberships",
     links: fallbackProducts
       .filter((product) => product.category.slug === "subscriptions")
       .slice(0, 4)
@@ -225,7 +229,7 @@ const giftMenuColumns: GiftMenuColumn[] = [
       }))
   },
   {
-    title: "Game Currency",
+    titleKey: "header.gift.gameCurrency",
     links: fallbackProducts
       .filter((product) => product.category.slug === "in-game-currency")
       .slice(0, 4)
@@ -235,40 +239,40 @@ const giftMenuColumns: GiftMenuColumn[] = [
       }))
   },
   {
-    title: "Quick Browse",
+    titleKey: "header.gift.quickBrowse",
     links: [
-      { label: "Gift Cards", to: "/store?category=gift-cards" },
-      { label: "Subscriptions", to: "/store?category=subscriptions" },
-      { label: "In-Game Currency", to: "/store?category=in-game-currency" },
-      { label: "View All Products", to: "/store" }
+      { labelKey: "header.menu.gift.cards", to: "/store?category=gift-cards" },
+      { labelKey: "header.menu.gift.subscriptions", to: "/store?category=subscriptions" },
+      { labelKey: "header.menu.gift.currency", to: "/store?category=in-game-currency" },
+      { labelKey: "header.gift.viewAllProducts", to: "/store" }
     ]
   }
 ];
 
-const desktopMenuOrder = [
+const desktopMenuOrder: CatalogTab[] = [
   platformTabs[0],
   consoleGamesTab,
   ...platformTabs.slice(1),
   {
     key: "gift-cards",
-    label: "GIFT CARDS",
-    title: "Gift cards and balance",
+    labelKey: "header.menu.gift.label",
+    titleKey: "header.menu.gift.title",
     viewAllTo: "/store?category=gift-cards",
     links: [
       {
-        label: "Gift Cards",
+        labelKey: "header.menu.gift.cards",
         to: "/store?category=gift-cards",
-        description: "Wallet credit and store cards"
+        descriptionKey: "header.menu.gift.cardsDesc"
       },
       {
-        label: "Subscriptions",
+        labelKey: "header.menu.gift.subscriptions",
         to: "/store?category=subscriptions",
-        description: "Gaming memberships and digital access"
+        descriptionKey: "header.menu.gift.subscriptionsDesc"
       },
       {
-        label: "In-Game Currency",
+        labelKey: "header.menu.gift.currency",
         to: "/store?category=in-game-currency",
-        description: "Robux, V-Bucks, points and more"
+        descriptionKey: "header.menu.gift.currencyDesc"
       }
     ],
     featured: firstProducts((product) => product.category.slug === "gift-cards")
@@ -331,10 +335,14 @@ export const Header = () => {
   const dismissAnnouncement = useUIStore((state) => state.dismissAnnouncement);
 
   const activeDesktopMenu = desktopMenuOrder.find((item) => item.key === desktopCategoryOpen) ?? null;
+  const linkLabel = (link: { label?: string; labelKey?: TranslationKey }) =>
+    link.label ?? (link.labelKey ? t(link.labelKey) : "");
+  const linkDescription = (link: CatalogLink) =>
+    link.description ?? (link.descriptionKey ? t(link.descriptionKey) : "");
 
   const mobileQuickLinks = [
     { label: t("header.nav.home"), to: "/" },
-    ...utilityLinks
+    ...utilityLinks.map((link) => ({ label: t(link.labelKey), to: link.to }))
   ];
 
   const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -355,7 +363,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="relative sticky top-0 z-40 backdrop-blur-xl">
+    <header dir={dir} className="relative sticky top-0 z-40 backdrop-blur-xl">
       {!announcementDismissed ? (
         <div className="border-b border-primary/15 bg-background/80">
           <div className="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 overflow-hidden px-4 py-2 text-[11px] uppercase tracking-[0.26em] text-primary sm:px-6">
@@ -366,7 +374,7 @@ export const Header = () => {
               </Link>
             </div>
             <button
-              aria-label="Dismiss announcement"
+              aria-label={t("header.dismissAnnouncement")}
               onClick={dismissAnnouncement}
               className="text-muted hover:text-white"
               type="button"
@@ -398,7 +406,7 @@ export const Header = () => {
             >
               <Search className="mr-3 h-4 w-4 text-muted" />
               <input
-                aria-label="Search products"
+                aria-label={t("header.searchProducts")}
                 dir={dir}
                 className="w-full bg-transparent text-sm text-white outline-none placeholder:text-muted"
                 placeholder={t("header.search.placeholder")}
@@ -410,7 +418,7 @@ export const Header = () => {
 
           <div className="flex items-center gap-3">
             <button
-              aria-label="Switch language"
+              aria-label={t("header.switchLanguage")}
               onClick={toggleLanguage}
               className="rounded-full border border-primary/20 bg-primary/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.22em] text-primary transition hover:border-primary/40 hover:bg-primary/15"
               type="button"
@@ -418,14 +426,14 @@ export const Header = () => {
               {t("header.language")}
             </button>
             <button
-              aria-label="Open wishlist"
+              aria-label={t("header.openWishlist")}
               className="hidden rounded-full border border-white/10 p-3 text-muted hover:text-white sm:inline-flex"
               type="button"
             >
               <Heart className="h-4 w-4" />
             </button>
             <button
-              aria-label="Open cart"
+              aria-label={t("header.openCart")}
               onClick={openCart}
               className="relative rounded-full border border-white/10 p-3 text-muted hover:text-white"
               type="button"
@@ -452,7 +460,7 @@ export const Header = () => {
                   className="rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-white transition hover:border-primary/30 hover:text-primary"
                   type="button"
                 >
-                  Logout
+                  {t("header.logout")}
                 </button>
               </div>
             ) : (
@@ -469,7 +477,7 @@ export const Header = () => {
             )}
 
             <button
-              aria-label="Open menu"
+              aria-label={t("header.openMenu")}
               className="rounded-full border border-white/10 p-3 text-muted lg:hidden"
               onClick={() => setMobileOpen(true)}
               type="button"
@@ -519,7 +527,7 @@ export const Header = () => {
                       : "border border-transparent text-white/95 hover:border-white/10 hover:bg-white/10 hover:shadow-[0_0_22px_rgba(0,212,255,0.12)]"
                   }`}
                 >
-                  {item.label}
+                  {t(item.labelKey)}
                   {isActive ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                 </button>
               );
@@ -529,11 +537,11 @@ export const Header = () => {
           <nav className="flex items-center gap-8">
             {utilityLinks.map((link) => (
               <NavLink
-              key={link.label}
-              to={link.to}
+                key={link.labelKey}
+                to={link.to}
                 className="rounded-md border border-transparent px-2 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white/95 transition duration-150 hover:border-white/10 hover:bg-white/10 hover:text-white"
               >
-                {link.label}
+                {t(link.labelKey)}
               </NavLink>
             ))}
           </nav>
@@ -552,19 +560,19 @@ export const Header = () => {
               {activeDesktopMenu.key === "gift-cards" ? (
                 <div className="mx-auto grid max-w-screen-2xl gap-10 px-6 py-8 xl:grid-cols-[1.2fr_1fr_1fr_1fr]">
                   {giftMenuColumns.map((column) => (
-                    <div key={column.title} className="space-y-5">
+                    <div key={column.titleKey} className="space-y-5">
                       <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
-                        {column.title}
+                        {t(column.titleKey)}
                       </div>
                       <div className="space-y-3">
                         {column.links.map((link) => (
                           <Link
-                            key={link.label}
+                            key={`${link.to}-${linkLabel(link)}`}
                             to={link.to}
                             onClick={() => setDesktopCategoryOpen(null)}
                             className="block rounded-2xl px-3 py-2 text-base font-medium text-white/92 transition duration-150 hover:bg-white/[0.05] hover:text-primary"
                           >
-                            {link.label}
+                            {linkLabel(link)}
                           </Link>
                         ))}
                       </div>
@@ -576,24 +584,28 @@ export const Header = () => {
                   <div className="space-y-6">
                     <div className="space-y-3">
                       <div className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">
-                        {activeDesktopMenu.title}
+                        {t(activeDesktopMenu.titleKey)}
                       </div>
                       <div className="space-y-1">
                         {activeDesktopMenu.links.map((link) => (
                           <Link
-                            key={link.label}
+                            key={link.labelKey ?? link.label}
                             to={link.to}
                             onClick={() => setDesktopCategoryOpen(null)}
                             className="group flex items-center justify-between rounded-2xl border border-transparent px-4 py-4 transition duration-150 hover:border-white/10 hover:bg-white/[0.05] hover:shadow-[0_0_24px_rgba(0,212,255,0.08)]"
                           >
                             <div>
-                              <div className="text-[1.05rem] font-semibold text-white">{link.label}</div>
-                              {link.description ? (
-                                <div className="mt-1 text-sm text-white/55">{link.description}</div>
+                              <div className="text-[1.05rem] font-semibold text-white">
+                                {linkLabel(link)}
+                              </div>
+                              {linkDescription(link) ? (
+                                <div className="mt-1 text-sm text-white/55">
+                                  {linkDescription(link)}
+                                </div>
                               ) : null}
                             </div>
                             <span className="text-xs uppercase tracking-[0.18em] text-white/35 transition group-hover:text-primary">
-                              Open
+                              {t("header.open")}
                             </span>
                           </Link>
                         ))}
@@ -605,13 +617,13 @@ export const Header = () => {
                       onClick={() => setDesktopCategoryOpen(null)}
                       className="inline-flex items-center rounded-full border border-white/10 px-5 py-3 text-sm font-semibold uppercase tracking-[0.14em] text-white transition hover:border-primary/30 hover:text-primary"
                     >
-                      View All
+                      {t("header.viewAll")}
                     </Link>
                   </div>
 
                   <div className="space-y-5">
                     <div className="text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
-                      Featured
+                      {t("header.featured")}
                     </div>
                     <div className="grid gap-4 xl:grid-cols-2">
                       {activeDesktopMenu.featured.map((product) => (
@@ -640,7 +652,11 @@ export const Header = () => {
           >
             <div className="mb-8 flex items-center justify-between">
               <div className="font-display text-xl tracking-[0.3em]">NEXUS</div>
-              <button aria-label="Close menu" onClick={() => setMobileOpen(false)} type="button">
+              <button
+                aria-label={t("header.closeMenu")}
+                onClick={() => setMobileOpen(false)}
+                type="button"
+              >
                 <X className="h-6 w-6" />
               </button>
             </div>
@@ -654,7 +670,7 @@ export const Header = () => {
             >
               <Search className="mr-3 h-4 w-4 text-muted" />
               <input
-                aria-label="Search products"
+                aria-label={t("header.searchProducts")}
                 dir={dir}
                 className="w-full bg-transparent text-sm text-white outline-none placeholder:text-muted"
                 placeholder={t("header.search.mobilePlaceholder")}
@@ -700,7 +716,7 @@ export const Header = () => {
                       onClick={() => setMobileCategoryOpen((current) => (current === menu.key ? null : menu.key))}
                       className="flex w-full items-center justify-between px-5 py-4 text-left text-sm font-semibold uppercase tracking-[0.14em] text-white"
                     >
-                      {menu.label}
+                      {t(menu.labelKey)}
                       {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                     </button>
 
@@ -716,12 +732,12 @@ export const Header = () => {
                           <div className="space-y-2 px-4 py-4">
                             {mobileLinks.map((link) => (
                               <Link
-                                key={`${menu.key}-${link.label}`}
+                                key={`${menu.key}-${link.to}-${linkLabel(link)}`}
                                 to={link.to}
                                 onClick={handleMobileNavigate}
                                 className="block rounded-2xl px-4 py-3 text-sm text-white/92 transition hover:bg-white/[0.05] hover:text-primary"
                               >
-                                {link.label}
+                                {linkLabel(link)}
                               </Link>
                             ))}
 
@@ -730,7 +746,7 @@ export const Header = () => {
                               onClick={handleMobileNavigate}
                               className="block rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm font-semibold text-primary"
                             >
-                              View All
+                              {t("header.viewAll")}
                             </Link>
                           </div>
                         </motion.div>
@@ -749,7 +765,7 @@ export const Header = () => {
                     onClick={handleMobileNavigate}
                     className="inline-flex rounded-full bg-primary px-5 py-3 font-semibold text-slate-950"
                   >
-                    Dashboard
+                    {t("header.dashboard")}
                   </Link>
                   <button
                     onClick={() => {
@@ -759,7 +775,7 @@ export const Header = () => {
                     className="inline-flex rounded-full border border-white/10 px-5 py-3 font-semibold text-white"
                     type="button"
                   >
-                    Logout
+                    {t("header.logout")}
                   </button>
                 </div>
               ) : (

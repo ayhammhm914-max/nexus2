@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "../../store/language.store";
 import type { Product } from "../../types/product.types";
 import { calculateDiscount, formatCurrency } from "../../utils/format";
 
@@ -76,6 +77,7 @@ const HeroVaultCard = ({
   item: ShowcaseItem;
   compact?: boolean;
 }) => {
+  const { t } = useTranslation();
   const discount = calculateDiscount(item.basePrice, item.salePrice);
   const price = item.salePrice ?? item.basePrice;
 
@@ -84,7 +86,7 @@ const HeroVaultCard = ({
       to={item.to}
       className={compact ? "hero-vault-card hero-vault-card-compact" : "hero-vault-card"}
       style={{ "--platform-color": item.platformColor } as CSSProperties}
-      aria-label={`Open ${item.name}`}
+      aria-label={`${t("product.openDetails")}: ${item.name}`}
     >
       <img src={item.coverImageUrl} alt={item.name} loading="lazy" />
       <div className="hero-vault-card-shade" />
@@ -93,7 +95,7 @@ const HeroVaultCard = ({
         {discount ? <strong>-{discount}%</strong> : null}
       </div>
       <div className="hero-vault-card-bottom">
-        <span>Instant</span>
+        <span>{t("product.instant")}</span>
         <strong>{formatCurrency(price)}</strong>
       </div>
     </Link>
@@ -101,11 +103,12 @@ const HeroVaultCard = ({
 };
 
 export const HeroGameCarousel = ({ products }: { products: Product[] }) => {
+  const { t } = useTranslation();
   const showcaseItems = getShowcaseItems(products);
   const columns = cardColumns(showcaseItems);
 
   return (
-    <div className="relative z-10 w-full" aria-label="Featured game showcase">
+    <div className="relative z-10 w-full" aria-label={t("hero.carousel.label")}>
       <div className="hero-vault-desktop hidden h-[760px] lg:block">
         <div className="hero-vault-stage">
           <div className="hero-vault-ring" />

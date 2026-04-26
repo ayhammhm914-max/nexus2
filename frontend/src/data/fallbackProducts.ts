@@ -1,8 +1,10 @@
 import { generatedFallbackProducts } from "./generatedFallbackProducts";
+import { fallbackTrailerVideoIds } from "./fallbackTrailerVideoIds";
 import type { PaginatedProducts, Product } from "../types/product.types";
 
 export const fallbackProducts: Product[] = generatedFallbackProducts.map((item) => ({
   ...item,
+  trailerVideoId: item.trailerVideoId ?? fallbackTrailerVideoIds[item.slug] ?? null,
   images: item.images.length
     ? item.images
     : ([item.coverImageUrl, item.thumbnailUrl].filter(Boolean) as string[])

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import api, { authPath, getApiErrorMessage, usesVersionedAuthApi } from "../../../lib/api";
+import api, { authPath, usesVersionedAuthApi } from "../../../lib/api";
+import { useTranslation } from "../../../store/language.store";
 import type { SignUpFormValues } from "../validation/authSchemas";
 
 const toUsername = (name: string, email: string) => {
@@ -27,6 +28,7 @@ export const useSignUp = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const handleSignUp = async (values: SignUpFormValues) => {
     setIsLoading(true);
@@ -47,14 +49,9 @@ export const useSignUp = () => {
           };
 
       await api.post(authPath("/auth/register"), payload);
-      setSuccess("Account created! Please log in.");
-    } catch (requestError) {
-      setError(
-        getApiErrorMessage(
-          requestError,
-          "Registration failed. Please check the account details and try again."
-        )
-      );
+      setSuccess(t("auth.success.register"));
+    } catch {
+      setError(t("auth.error.register"));
     } finally {
       setIsLoading(false);
     }

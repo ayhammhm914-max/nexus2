@@ -16,7 +16,7 @@ type HeroBannerProps = {
 
 export const HeroBanner = ({ spotlightProducts, showcaseProducts }: HeroBannerProps) => {
   const products = spotlightProducts.slice(0, 3);
-  const { t, dir } = useTranslation();
+  const { t, dir, language } = useTranslation();
   const deliverySteps = [
     t("hero.delivery.buy"),
     t("hero.delivery.receive"),
@@ -149,10 +149,10 @@ export const HeroBanner = ({ spotlightProducts, showcaseProducts }: HeroBannerPr
                           </div>
                           <h3 className="mt-3 text-lg font-semibold text-white">{product.name}</h3>
                           <p className="mt-2 text-xs uppercase tracking-[0.22em] text-muted">
-                            {getProductOfferLabel(product)}
+                            {getProductOfferLabel(product, language)}
                           </p>
                           <p className="mt-2 text-sm leading-6 text-muted">
-                            {getPlatformRedeemLabel(product.platform.name)}
+                            {getPlatformRedeemLabel(product.platform.name, language)}
                           </p>
                           <div className="mt-4 flex items-center justify-between gap-3">
                             <PriceDisplay basePrice={product.basePrice} salePrice={product.salePrice} />

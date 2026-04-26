@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { useTranslation } from "../../store/language.store";
 
 type FloatingCard = {
   className: string;
@@ -94,6 +95,8 @@ const particles = Array.from({ length: 20 }, (_, index) => ({
 }));
 
 export const HeroCinematicBackground = () => {
+  const { t } = useTranslation();
+
   return (
     <div className="hero-cinematic pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
       <div className="hero-cinematic-camera absolute inset-0">
@@ -121,7 +124,7 @@ export const HeroCinematicBackground = () => {
               <strong>{card.discount}</strong>
             </div>
             <div className="hero-video-card-bottom">
-              <span>Instant</span>
+              <span>{t("product.instant")}</span>
               <strong>{card.price}</strong>
             </div>
             <div className="hero-video-card-gloss" />

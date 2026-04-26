@@ -1,31 +1,38 @@
 import { z } from "zod";
-
-const strongPasswordMessage =
-  "Password must include uppercase, lowercase, number, and special character.";
+import { translate, type TranslationKey } from "../../../i18n/translations";
 
 const strongPasswordRegex =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,128}$/;
 
-export const loginSchema = z.object({
-  email: z.string().min(1, "Email is required.").email("Enter a valid email address."),
-  password: z.string().min(8, "Password must be at least 8 characters.")
-});
+type TranslateFn = (key: TranslationKey) => string;
 
-export const signUpSchema = z
-  .object({
-    name: z
-      .string()
-      .min(3, "Name must be at least 3 characters.")
-      .max(24, "Name must be 24 characters or less.")
-      .regex(/^[a-zA-Z0-9_ ]+$/, "Use only letters, numbers, spaces, and underscores."),
-    email: z.string().min(1, "Email is required.").email("Enter a valid email address."),
-    password: z.string().regex(strongPasswordRegex, strongPasswordMessage),
-    confirmPassword: z.string().regex(strongPasswordRegex, strongPasswordMessage)
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords must match.",
-    path: ["confirmPassword"]
+const defaultT: TranslateFn = (key) => translate("en", key);
+
+export const createLoginSchema = (t: TranslateFn = defaultT) =>
+  z.object({
+    email: z.string().min(1, t("auth.validation.emailRequired")).email(t("auth.validation.emailInvalid")),
+    password: z.string().min(8, t("auth.validation.passwordLength"))
   });
+
+export const createSignUpSchema = (t: TranslateFn = defaultT) =>
+  z
+    .object({
+      name: z
+        .string()
+        .min(3, t("auth.validation.nameLength"))
+        .max(24, t("auth.validation.nameMax"))
+        .regex(/^[a-zA-Z0-9_ ]+$/, t("auth.validation.nameChars")),
+      email: z.string().min(1, t("auth.validation.emailRequired")).email(t("auth.validation.emailInvalid")),
+      password: z.string().regex(strongPasswordRegex, t("auth.validation.passwordStrong")),
+      confirmPassword: z.string().regex(strongPasswordRegex, t("auth.validation.passwordStrong"))
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("auth.validation.passwordMatch"),
+      path: ["confirmPassword"]
+    });
+
+export const loginSchema = createLoginSchema();
+export const signUpSchema = createSignUpSchema();
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
 export type SignUpFormValues = z.infer<typeof signUpSchema>;

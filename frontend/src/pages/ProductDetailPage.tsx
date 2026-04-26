@@ -33,6 +33,8 @@ import {
   getRedeemSteps,
   getYoutubeSearchUrl
 } from "../utils/productExperience";
+import { useTranslation } from "../store/language.store";
+import { getLocalizedCategoryName } from "../utils/storefront";
 
 export const ProductDetailPage = () => {
   const { slug = "" } = useParams();
@@ -42,6 +44,7 @@ export const ProductDetailPage = () => {
   const hotDeals = useHotDeals();
   const addItem = useCartStore((state) => state.addItem);
   const [activeImage, setActiveImage] = useState<string>("");
+  const { t, language, dir } = useTranslation();
 
   useEffect(() => {
     if (!data) {
@@ -57,8 +60,8 @@ export const ProductDetailPage = () => {
   }
 
   const gallery = getProductGallery(data);
-  const narrative = getProductNarrative(data);
-  const redeemSteps = getRedeemSteps(data);
+  const narrative = getProductNarrative(data, language);
+  const redeemSteps = getRedeemSteps(data, language);
   const similarProducts = (relatedProducts.data ?? []).filter((product) => product.id !== data.id).slice(0, 8);
   const mayLikeProducts = uniqueProducts([
     ...(featuredProducts.data ?? []),
@@ -68,21 +71,41 @@ export const ProductDetailPage = () => {
     .filter((product) => product.id !== data.id && !similarProducts.some((item) => item.id === product.id))
     .slice(0, 8);
   const youtubeUrl = getYoutubeSearchUrl(data);
-  const regionLabel = getProductRegionLabel(data.region);
+  const regionLabel = getProductRegionLabel(data.region, language);
+  const categoryLabel = getLocalizedCategoryName(data, language);
   const reviews = (data.reviews ?? []).slice(0, 3);
+  const rawTrailerVideoId = data.trailerVideoId?.trim() ?? "";
+  const trailerVideoId = /^[a-zA-Z0-9_-]{11}$/.test(rawTrailerVideoId) ? rawTrailerVideoId : "";
+  const trailerEmbedUrl = trailerVideoId
+    ? `https://www.youtube.com/embed/${trailerVideoId}?autoplay=1&mute=1&loop=1&playlist=${trailerVideoId}&controls=0&showinfo=0&rel=0&disablekb=1&modestbranding=1&iv_load_policy=3&start=3&playsinline=1`
+    : "";
 
   return (
     <div className="relative overflow-hidden">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[520px] bg-[radial-gradient(circle_at_top_left,rgba(0,212,255,0.18),transparent_42%),radial-gradient(circle_at_top_right,rgba(124,58,237,0.16),transparent_40%),linear-gradient(180deg,rgba(8,12,22,0.9),rgba(8,12,22,0))]" />
+      {trailerEmbedUrl ? (
+        <div className="product-trailer-bg" aria-hidden="true">
+          <iframe
+            src={trailerEmbedUrl}
+            allow="autoplay; encrypted-media"
+            allowFullScreen
+            title={t("detail.trailerBackgroundTitle")}
+          />
+          <div className="trailer-overlay-sides" />
+          <div className="trailer-overlay-bottom" />
+          <div className="trailer-overlay-top" />
+        </div>
+      ) : (
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-[520px] bg-[radial-gradient(circle_at_top_left,rgba(0,212,255,0.18),transparent_42%),radial-gradient(circle_at_top_right,rgba(124,58,237,0.16),transparent_40%),linear-gradient(180deg,rgba(8,12,22,0.9),rgba(8,12,22,0))]" />
+      )}
 
-      <section className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-16">
+      <section className="relative z-10 mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:py-16" dir={dir}>
         <div className="mb-8 flex flex-wrap items-center gap-3 text-sm text-muted">
           <Link to="/" className="transition hover:text-white">
-            Home
+            {t("detail.home")}
           </Link>
           <span>/</span>
           <Link to="/store" className="transition hover:text-white">
-            Store
+            {t("detail.store")}
           </Link>
           <span>/</span>
           <span className="text-white">{data.name}</span>
@@ -129,9 +152,9 @@ export const ProductDetailPage = () => {
           <div className="space-y-6">
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
-                <Badge tone="accent">Instant delivery</Badge>
-                <Badge>Full game or official digital product</Badge>
-                <Badge tone="gold">Single-seller guarantee</Badge>
+                <Badge tone="accent">{t("detail.instantDelivery")}</Badge>
+                <Badge>{t("detail.officialProduct")}</Badge>
+                <Badge tone="gold">{t("detail.singleSeller")}</Badge>
               </div>
 
               <h1 className="max-w-4xl font-display text-4xl leading-tight text-white sm:text-5xl">
@@ -148,11 +171,11 @@ export const ProductDetailPage = () => {
                   <div className="flex flex-wrap items-center gap-3 text-sm text-muted">
                     <span className="inline-flex items-center gap-2">
                       <Clock3 className="h-4 w-4 text-primary" />
-                      Usually delivered in seconds
+                      {t("detail.deliverySeconds")}
                     </span>
                     <span className="inline-flex items-center gap-2">
                       <ShieldCheck className="h-4 w-4 text-accent" />
-                      Verified digital stock
+                      {t("detail.digitalStock")}
                     </span>
                   </div>
                 </div>
@@ -160,13 +183,13 @@ export const ProductDetailPage = () => {
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <Button className="gap-2" onClick={() => addItem(data)} disabled={data.stock <= 0}>
                     <ShoppingCart className="h-4 w-4" />
-                    {data.stock > 0 ? "Add To Cart" : "Out of Stock"}
+                    {data.stock > 0 ? t("product.addToCart") : t("product.outOfStock")}
                   </Button>
                   <Link
                     to="/store"
                     className="inline-flex items-center justify-center gap-2 rounded-full border border-white/12 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:border-primary/40 hover:bg-white/10"
                   >
-                    Browse Store
+                    {t("detail.browseStore")}
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </div>
@@ -175,10 +198,10 @@ export const ProductDetailPage = () => {
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {[
-                { label: "Platform", value: data.platform.name, icon: BadgeCheck },
-                { label: "Region", value: regionLabel, icon: Gift },
-                { label: "Stock", value: `${data.stock} available`, icon: Sparkles },
-                { label: "Category", value: data.category.name, icon: ShieldCheck }
+                { label: t("detail.platform"), value: data.platform.name, icon: BadgeCheck },
+                { label: t("detail.region"), value: regionLabel, icon: Gift },
+                { label: t("detail.stock"), value: `${data.stock} ${t("detail.available")}`, icon: Sparkles },
+                { label: t("detail.category"), value: categoryLabel, icon: ShieldCheck }
               ].map((item) => (
                 <article
                   key={item.label}
@@ -193,9 +216,9 @@ export const ProductDetailPage = () => {
 
             <div className="grid gap-4 md:grid-cols-3">
               {[
-                "Buy with confidence from one verified digital seller",
-                "You are buying the actual product, delivered as a digital code",
-                "Secure checkout and straightforward redemption guidance"
+                t("detail.confidence1"),
+                t("detail.confidence2"),
+                t("detail.confidence3")
               ].map((item) => (
                 <div
                   key={item}
@@ -212,8 +235,8 @@ export const ProductDetailPage = () => {
         <div className="mt-14 grid gap-8 xl:grid-cols-[1.02fr_0.98fr]">
           <div className="space-y-8">
             <section className="rounded-[32px] border border-white/10 bg-panel/80 p-8 shadow-card">
-              <div className="text-xs uppercase tracking-[0.3em] text-primary">About This Product</div>
-              <h2 className="mt-3 font-display text-3xl text-white">Clarity first, then instant access.</h2>
+              <div className="text-xs uppercase tracking-[0.3em] text-primary">{t("detail.aboutEyebrow")}</div>
+              <h2 className="mt-3 font-display text-3xl text-white">{t("detail.aboutTitle")}</h2>
               <p className="mt-4 text-sm leading-8 text-muted">{narrative.overview}</p>
 
               <div className="mt-8 grid gap-4 md:grid-cols-2">
@@ -232,11 +255,10 @@ export const ProductDetailPage = () => {
             <section className="rounded-[32px] border border-white/10 bg-panel/80 p-8 shadow-card">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                  <div className="text-xs uppercase tracking-[0.3em] text-primary">Trailer & Media</div>
-                  <h2 className="mt-3 font-display text-3xl text-white">See the game or product in action.</h2>
+                  <div className="text-xs uppercase tracking-[0.3em] text-primary">{t("detail.trailerEyebrow")}</div>
+                  <h2 className="mt-3 font-display text-3xl text-white">{t("detail.trailerTitle")}</h2>
                   <p className="mt-3 max-w-3xl text-sm leading-8 text-muted">
-                    If there is an official trailer or gameplay video on YouTube, this shortcut takes the customer there
-                    immediately with the correct search already prepared.
+                    {t("detail.trailerBody")}
                   </p>
                 </div>
 
@@ -247,7 +269,7 @@ export const ProductDetailPage = () => {
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-5 py-3 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-primary/15"
                 >
                   <PlayCircle className="h-4 w-4 text-primary" />
-                  Watch On YouTube
+                  {t("detail.watchYoutube")}
                   <ExternalLink className="h-4 w-4" />
                 </a>
               </div>
@@ -256,20 +278,19 @@ export const ProductDetailPage = () => {
                 <div className="max-w-3xl">
                   <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-3 py-1 text-xs uppercase tracking-[0.25em] text-slate-200">
                     <PlayCircle className="h-3.5 w-3.5 text-primary" />
-                    Official trailer search
+                    {t("detail.trailerSearch")}
                   </div>
                   <h3 className="mt-5 font-display text-2xl text-white">{data.name}</h3>
                   <p className="mt-3 text-sm leading-8 text-slate-200">
-                    Customers can preview gameplay, story, graphics, or redemption-related explainers before checkout,
-                    which adds trust and makes the product easier to understand for non-experts.
+                    {t("detail.trailerCardBody")}
                   </p>
                 </div>
               </div>
             </section>
 
             <section className="rounded-[32px] border border-white/10 bg-panel/80 p-8 shadow-card">
-              <div className="text-xs uppercase tracking-[0.3em] text-primary">How It Works</div>
-              <h2 className="mt-3 font-display text-3xl text-white">Buy - receive code - redeem - use instantly.</h2>
+              <div className="text-xs uppercase tracking-[0.3em] text-primary">{t("detail.howEyebrow")}</div>
+              <h2 className="mt-3 font-display text-3xl text-white">{t("detail.howTitle")}</h2>
               <div className="mt-8 grid gap-4 md:grid-cols-2">
                 {redeemSteps.map((step, index) => (
                   <article
@@ -288,8 +309,8 @@ export const ProductDetailPage = () => {
 
             {reviews.length ? (
               <section className="rounded-[32px] border border-white/10 bg-panel/80 p-8 shadow-card">
-                <div className="text-xs uppercase tracking-[0.3em] text-primary">Customer Feedback</div>
-                <h2 className="mt-3 font-display text-3xl text-white">Real reactions from NEXUS buyers.</h2>
+                <div className="text-xs uppercase tracking-[0.3em] text-primary">{t("detail.feedbackEyebrow")}</div>
+                <h2 className="mt-3 font-display text-3xl text-white">{t("detail.feedbackTitle")}</h2>
                 <div className="mt-8 grid gap-4">
                   {reviews.map((review) => (
                     <article
@@ -316,8 +337,8 @@ export const ProductDetailPage = () => {
 
           <div className="space-y-8">
             <section className="rounded-[32px] border border-white/10 bg-panel/80 p-8 shadow-card">
-              <div className="text-xs uppercase tracking-[0.3em] text-primary">What You Get</div>
-              <h2 className="mt-3 font-display text-3xl text-white">Everything clearly spelled out.</h2>
+              <div className="text-xs uppercase tracking-[0.3em] text-primary">{t("detail.whatYouGet")}</div>
+              <h2 className="mt-3 font-display text-3xl text-white">{t("detail.whatYouGetTitle")}</h2>
               <div className="mt-6 space-y-4">
                 {narrative.includes.map((item) => (
                   <div
@@ -332,26 +353,25 @@ export const ProductDetailPage = () => {
             </section>
 
             <section className="rounded-[32px] border border-white/10 bg-panel/80 p-8 shadow-card">
-              <div className="text-xs uppercase tracking-[0.3em] text-primary">Redemption Guidance</div>
-              <h2 className="mt-3 font-display text-3xl text-white">Simple enough for any customer.</h2>
+              <div className="text-xs uppercase tracking-[0.3em] text-primary">{t("detail.redemption")}</div>
+              <h2 className="mt-3 font-display text-3xl text-white">{t("detail.redemptionTitle")}</h2>
               <div className="mt-6 rounded-[24px] border border-primary/20 bg-primary/10 p-5 text-sm leading-8 text-slate-100">
                 {narrative.platformRedeem}
               </div>
               <div className="mt-6 rounded-[24px] border border-white/10 bg-white/[0.04] p-5 text-sm leading-8 text-muted">
-                You are buying the actual product in digital form. The only difference is delivery: instead of a box or
-                download installer, you receive a code and redeem it on the correct platform.
+                {t("detail.digitalForm")}
               </div>
             </section>
 
             <section className="rounded-[32px] border border-white/10 bg-panel/80 p-8 shadow-card">
-              <div className="text-xs uppercase tracking-[0.3em] text-primary">Why NEXUS</div>
-              <h2 className="mt-3 font-display text-3xl text-white">Premium storefront, not a random marketplace.</h2>
+              <div className="text-xs uppercase tracking-[0.3em] text-primary">{t("detail.why")}</div>
+              <h2 className="mt-3 font-display text-3xl text-white">{t("detail.whyTitle")}</h2>
               <div className="mt-6 space-y-4">
                 {[
-                  "Single-seller quality control on every listed product",
-                  "Premium, clear product pages that explain exactly what customers are buying",
-                  "Fast order flow built around secure digital delivery",
-                  "Support-ready structure for activation questions or redemption help"
+                  t("detail.why1"),
+                  t("detail.why2"),
+                  t("detail.why3"),
+                  t("detail.why4")
                 ].map((item) => (
                   <div key={item} className="rounded-[20px] border border-white/10 bg-white/[0.04] p-4 text-sm leading-7 text-slate-200">
                     {item}
@@ -361,8 +381,8 @@ export const ProductDetailPage = () => {
             </section>
 
             <section className="rounded-[32px] border border-white/10 bg-panel/80 p-8 shadow-card">
-              <div className="text-xs uppercase tracking-[0.3em] text-primary">Quick Answers</div>
-              <h2 className="mt-3 font-display text-3xl text-white">Questions customers usually ask.</h2>
+              <div className="text-xs uppercase tracking-[0.3em] text-primary">{t("detail.answers")}</div>
+              <h2 className="mt-3 font-display text-3xl text-white">{t("detail.answersTitle")}</h2>
               <div className="mt-6 space-y-4">
                 {narrative.faqs.map((faq) => (
                   <article key={faq.question} className="rounded-[22px] border border-white/10 bg-white/[0.04] p-5">
@@ -377,16 +397,16 @@ export const ProductDetailPage = () => {
 
         <div className="mt-16 space-y-16">
           <ProductRail
-            eyebrow="Similar Products"
-            title="Close matches for this item."
-            description="Related picks from the same platform or category so the customer can compare confidently without leaving the buying flow."
+            eyebrow={t("detail.similarEyebrow")}
+            title={t("detail.similarTitle")}
+            description={t("detail.similarDescription")}
             products={similarProducts}
           />
 
           <ProductRail
-            eyebrow="You May Like"
-            title="Other strong picks from the NEXUS catalog."
-            description="Featured deals, trusted sellers, and popular digital products that fit the same audience and buying intent."
+            eyebrow={t("detail.mayLikeEyebrow")}
+            title={t("detail.mayLikeTitle")}
+            description={t("detail.mayLikeDescription")}
             products={mayLikeProducts}
           />
         </div>

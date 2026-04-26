@@ -7,7 +7,11 @@ import { useCartStore } from "../../store/cart.store";
 import { useTranslation } from "../../store/language.store";
 import type { Product } from "../../types/product.types";
 import { calculateDiscount, truncate } from "../../utils/format";
-import { getPlatformRedeemLabel, getProductOfferLabel } from "../../utils/storefront";
+import {
+  getLocalizedProductShortDescription,
+  getPlatformRedeemLabel,
+  getProductOfferLabel
+} from "../../utils/storefront";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { PriceDisplay } from "../ui/PriceDisplay";
@@ -20,27 +24,13 @@ export const ProductCard = ({
   className?: string;
 }) => {
   const addItem = useCartStore((state) => state.addItem);
-  const { t, isArabic, dir } = useTranslation();
+  const { t, language, dir } = useTranslation();
   const discount = calculateDiscount(product.basePrice, product.salePrice);
   const platformAccent = product.platform.color ?? "#00D4FF";
-  const englishOfferLabel = getProductOfferLabel(product);
-  const productOfferLabel = isArabic
-    ? product.type === "GAME_KEY"
-      ? t("product.fullGame")
-      : product.type === "GIFT_CARD"
-        ? t("product.giftCard")
-        : product.type === "SUBSCRIPTION"
-          ? t("product.subscription")
-          : product.type === "IN_GAME_CURRENCY"
-            ? t("product.currency")
-            : product.type === "WALLET_TOP_UP"
-              ? t("product.wallet")
-              : englishOfferLabel
-    : englishOfferLabel;
+  const productOfferLabel = getProductOfferLabel(product, language);
+  const productDescription = getLocalizedProductShortDescription(product, language);
   const productTrustLine = product.stock <= 8 ? t("product.sellingFast") : t("product.verifiedStock");
-  const platformRedeemLabel = isArabic
-    ? `${t("product.redeemOn")} ${product.platform.name}`
-    : getPlatformRedeemLabel(product.platform.name);
+  const platformRedeemLabel = getPlatformRedeemLabel(product.platform.name, language);
 
   return (
     <motion.article
@@ -60,7 +50,7 @@ export const ProductCard = ({
     >
       <Link
         to={`/products/${product.slug}`}
-        aria-label={`Open ${product.name} details`}
+        aria-label={`${t("product.openDetails")}: ${product.name}`}
         className="absolute inset-0 z-10 rounded-[28px]"
       />
 
@@ -86,7 +76,7 @@ export const ProductCard = ({
           <Badge tone="accent">{t("product.instant")}</Badge>
         </div>
         <button
-          aria-label={`Add ${product.name} to wishlist`}
+          aria-label={`${t("product.addWishlist")}: ${product.name}`}
           aria-pressed="false"
           className="pointer-events-auto absolute right-4 top-4 rounded-full border border-white/15 bg-background/50 p-2 text-white"
           type="button"
@@ -106,7 +96,7 @@ export const ProductCard = ({
             <Badge tone={product.stock <= 8 ? "gold" : "default"}>{productTrustLine}</Badge>
           </div>
           <h3 className="block text-lg font-semibold leading-7 text-white">{truncate(product.name, 58)}</h3>
-          <p className="text-sm leading-6 text-muted">{truncate(product.shortDescription, 88)}</p>
+          <p className="text-sm leading-6 text-muted">{truncate(productDescription, 88)}</p>
         </div>
 
         <div className="rounded-[22px] border border-white/10 bg-white/[0.04] p-4">

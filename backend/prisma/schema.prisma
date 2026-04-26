@@ -293,6 +293,7 @@ model Product {
   tags             Json
   coverImageUrl    String?
   thumbnailUrl     String?
+  trailerVideoId   String?         @db.VarChar(50)
   images           Json
   minQuantity      Int             @default(1)
   maxQuantity      Int             @default(10)

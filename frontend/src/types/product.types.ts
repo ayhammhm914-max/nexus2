@@ -28,6 +28,7 @@ export type Product = {
   soldCount: number;
   coverImageUrl?: string | null;
   thumbnailUrl?: string | null;
+  trailerVideoId?: string | null;
   images: string[];
   rating?: number | null;
   reviewCount: number;

@@ -1,9 +1,11 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { Button } from "../../../components/ui/Button";
+import { useTranslation } from "../../../store/language.store";
 import {
-  loginSchema,
+  createLoginSchema,
   type LoginFormValues
 } from "../validation/authSchemas";
 
@@ -14,6 +16,8 @@ type LoginFormProps = {
 };
 
 export const LoginForm = ({ onSubmit, isLoading, error }: LoginFormProps) => {
+  const { t, dir } = useTranslation();
+  const loginSchema = useMemo(() => createLoginSchema(t), [t]);
   const {
     formState: { errors },
     handleSubmit,
@@ -26,15 +30,16 @@ export const LoginForm = ({ onSubmit, isLoading, error }: LoginFormProps) => {
     <form
       className="w-full rounded-[32px] border border-white/10 bg-panel p-8 shadow-card"
       onSubmit={handleSubmit(onSubmit)}
+      dir={dir}
     >
-      <div className="text-sm uppercase tracking-[0.28em] text-primary">Account access</div>
-      <h1 className="mt-3 font-display text-3xl text-white">Sign in to NEXUS</h1>
+      <div className="text-sm uppercase tracking-[0.28em] text-primary">{t("auth.access")}</div>
+      <h1 className="mt-3 font-display text-3xl text-white">{t("auth.signInTitle")}</h1>
       <div className="mt-8 space-y-4">
         <label className="block">
-          <span className="sr-only">Email</span>
+          <span className="sr-only">{t("auth.email")}</span>
           <input
-            aria-label="Email address"
-            placeholder="Email"
+            aria-label={t("auth.emailAddress")}
+            placeholder={t("auth.email")}
             type="email"
             className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-white outline-none placeholder:text-muted"
             {...register("email")}
@@ -42,10 +47,10 @@ export const LoginForm = ({ onSubmit, isLoading, error }: LoginFormProps) => {
           {errors.email ? <p className="mt-2 text-sm text-danger">{errors.email.message}</p> : null}
         </label>
         <label className="block">
-          <span className="sr-only">Password</span>
+          <span className="sr-only">{t("auth.password")}</span>
           <input
-            aria-label="Password"
-            placeholder="Password"
+            aria-label={t("auth.password")}
+            placeholder={t("auth.password")}
             type="password"
             className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-white outline-none placeholder:text-muted"
             {...register("password")}
@@ -57,12 +62,12 @@ export const LoginForm = ({ onSubmit, isLoading, error }: LoginFormProps) => {
       </div>
       {error ? <p className="mt-4 text-sm text-danger">{error}</p> : null}
       <Button className="mt-6 w-full" disabled={isLoading}>
-        {isLoading ? "Signing in..." : "Sign in"}
+        {isLoading ? t("auth.signingIn") : t("auth.signIn")}
       </Button>
       <p className="mt-4 text-sm text-muted">
-        No account?{" "}
+        {t("auth.noAccount")}{" "}
         <Link to="/register" className="text-primary">
-          Create one
+          {t("auth.createOne")}
         </Link>
       </p>
     </form>

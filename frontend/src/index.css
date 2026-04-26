@@ -92,6 +92,72 @@ a {
   display: none;
 }
 
+.product-trailer-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.product-trailer-bg iframe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1.15);
+  width: 100vw;
+  height: 56.25vw;
+  min-height: 100%;
+  min-width: 177.78vh;
+  border: none;
+  opacity: 0.45;
+  filter: saturate(1.2) brightness(0.6);
+}
+
+.trailer-overlay-sides {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 30%,
+    rgba(5, 8, 20, 0.85) 100%
+  );
+}
+
+.trailer-overlay-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 65%;
+  z-index: 2;
+  background: linear-gradient(
+    to top,
+    rgba(5, 8, 20, 1) 0%,
+    rgba(5, 8, 20, 0.85) 30%,
+    rgba(5, 8, 20, 0.4) 60%,
+    transparent 100%
+  );
+}
+
+.trailer-overlay-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 30%;
+  z-index: 2;
+  background: linear-gradient(
+    to bottom,
+    rgba(5, 8, 20, 0.8) 0%,
+    transparent 100%
+  );
+}
+
 .trust-cinematic-section {
   isolation: isolate;
   background:

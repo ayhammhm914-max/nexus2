@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api, { authPath, getApiErrorMessage } from "../../../lib/api";
+import api, { authPath } from "../../../lib/api";
+import { useTranslation } from "../../../store/language.store";
 import { useAuth, type AuthUser } from "../context/AuthContext";
 import type { LoginFormValues } from "../validation/authSchemas";
 
@@ -25,6 +26,7 @@ export const useLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { setAuthSession } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const handleLogin = async (values: LoginFormValues) => {
@@ -44,8 +46,8 @@ export const useLogin = () => {
 
       setAuthSession(user, accessToken);
       navigate("/dashboard");
-    } catch (requestError) {
-      setError(getApiErrorMessage(requestError, "Invalid email or password."));
+    } catch {
+      setError(t("auth.error.login"));
     } finally {
       setIsLoading(false);
     }

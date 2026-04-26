@@ -1,16 +1,30 @@
+import type { Language } from "../i18n/translations";
 import type { Product } from "../types/product.types";
 import { getPlatformRedeemLabel, getProductOfferLabel } from "./storefront";
 
-const regionLabels: Record<string, string> = {
-  GLOBAL: "Global",
-  US: "United States",
-  EU: "Europe",
-  UK: "United Kingdom",
-  TR: "Turkey",
-  AR: "Argentina",
-  BR: "Brazil",
-  MENA: "Middle East",
-  APAC: "Asia Pacific"
+const regionLabels: Record<Language, Record<string, string>> = {
+  en: {
+    GLOBAL: "Global",
+    US: "United States",
+    EU: "Europe",
+    UK: "United Kingdom",
+    TR: "Turkey",
+    AR: "Argentina",
+    BR: "Brazil",
+    MENA: "Middle East",
+    APAC: "Asia Pacific"
+  },
+  ar: {
+    GLOBAL: "عالمي",
+    US: "الولايات المتحدة",
+    EU: "أوروبا",
+    UK: "المملكة المتحدة",
+    TR: "تركيا",
+    AR: "الأرجنتين",
+    BR: "البرازيل",
+    MENA: "الشرق الأوسط",
+    APAC: "آسيا والمحيط الهادئ"
+  }
 };
 
 const specialBlurbs: Record<string, string> = {
@@ -33,7 +47,8 @@ const specialBlurbs: Record<string, string> = {
 export const toStringArray = (value: unknown) =>
   Array.isArray(value) ? value.map((item) => String(item)).filter(Boolean) : [];
 
-export const getProductRegionLabel = (region: string) => regionLabels[region] ?? region;
+export const getProductRegionLabel = (region: string, language: Language = "en") =>
+  regionLabels[language][region] ?? region;
 
 export const getYoutubeSearchUrl = (product: Product) =>
   `https://www.youtube.com/results?search_query=${encodeURIComponent(`${product.name} official trailer`)}`;
@@ -48,11 +63,155 @@ export const getProductGallery = (product: Product) => {
   return [...new Set(gallery)];
 };
 
-export const getProductNarrative = (product: Product) => {
-  const offerLabel = getProductOfferLabel(product);
-  const platformRedeem = getPlatformRedeemLabel(product.platform.name);
-  const regionLabel = getProductRegionLabel(product.region);
+export const getProductNarrative = (product: Product, language: Language = "en") => {
+  const offerLabel = getProductOfferLabel(product, language);
+  const platformRedeem = getPlatformRedeemLabel(product.platform.name, language);
+  const regionLabel = getProductRegionLabel(product.region, language);
   const tags = toStringArray(product.tags);
+
+  if (language === "ar") {
+    if (product.category.slug === "gift-cards") {
+      return {
+        eyebrow: "رصيد متجر",
+        lead: `اشحن الرصيد فورًا مع ${offerLabel} لمنصة ${product.platform.name}. المنتج مخصص لمنطقة ${regionLabel} ويتم تسليمه من NEXUS خلال ثوان.`,
+        overview:
+          "هذا المنتج يمنحك رصيد محفظة رقميًا واضحًا. مناسب لشراء الألعاب، الإضافات، الاشتراكات، ومشتريات المتجر بدون انتظار أو بائعين عشوائيين.",
+        bullets: [
+          "تسليم رقمي فوري بعد الدفع",
+          `مخصص للتفعيل في منطقة ${regionLabel}`,
+          "مناسب للإهداء أو شحن محفظتك",
+          "مخزون موثق من بائع واحد في NEXUS"
+        ],
+        includes: [
+          "كود محفظة رقمي واحد",
+          `التفعيل على ${product.platform.name}`,
+          "تسليم سريع داخل صفحة طلبك",
+          "دعم بسيط إذا احتجت مساعدة في التفعيل"
+        ],
+        faqs: [
+          {
+            question: "ماذا أشتري بالضبط؟",
+            answer: `أنت تشتري رصيد متجر حقيقي لمنصة ${product.platform.name} ويتم تسليمه ككود رقمي.`
+          },
+          {
+            question: "كيف يتم التسليم؟",
+            answer: "يظهر الكود في صفحة طلبك مباشرة بعد نجاح الدفع."
+          },
+          {
+            question: "هل يمكنني استخدامه في أي مكان؟",
+            answer: `استخدمه في المنطقة المذكورة لهذا المنتج: ${regionLabel}.`
+          }
+        ],
+        platformRedeem
+      };
+    }
+
+    if (product.category.slug === "subscriptions") {
+      return {
+        eyebrow: "وصول اشتراك",
+        lead: `فعّل ${product.name} بسرعة عبر كود رقمي آمن من NEXUS وابدأ استخدام الاشتراك بدون انتظار معالجة يدوية.`,
+        overview:
+          "هذا المنتج مخصص للاعبين الذين يريدون وصولًا سريعًا للعضويات أو مكتبات الألعاب أو مزايا الحساب. التجربة بسيطة: اشتر، استلم الكود، فعّله على المنصة الصحيحة، وابدأ الاستخدام.",
+        bullets: [
+          "تسليم سريع بعد تأكيد الدفع",
+          `تفعيل واضح على ${product.platform.name}`,
+          "مناسب للاستخدام الشخصي أو الإهداء",
+          "مخزون موثق من بائع واحد"
+        ],
+        includes: [
+          "كود تفعيل واحد",
+          "تسليم رقمي داخل صفحة طلبك",
+          "تسمية واضحة حسب المنطقة",
+          "دعم إذا ظهرت أسئلة أثناء التفعيل"
+        ],
+        faqs: [
+          {
+            question: "هل هذه بطاقة فعلية؟",
+            answer: "لا. هذا كود اشتراك رقمي يظهر لك بعد الدفع."
+          },
+          {
+            question: "هل أحتاج حسابًا أولًا؟",
+            answer: `نعم. تقوم بتفعيله على حسابك الحالي في ${product.platform.name}.`
+          },
+          {
+            question: "هل يضاف إلى اشتراكي الحالي؟",
+            answer: "يعتمد ذلك على قوانين المنصة، لكن في كثير من الحالات يمكن تمديد مدة الاشتراك."
+          }
+        ],
+        platformRedeem
+      };
+    }
+
+    if (product.category.slug === "in-game-currency") {
+      return {
+        eyebrow: "عملة داخل اللعبة",
+        lead: `احصل على ${product.name} فورًا واشحن رصيد لعبتك بكود رقمي آمن مع توضيح المنصة والمنطقة.`,
+        overview:
+          "هذا المنتج مخصص للشحن السريع داخل الألعاب. سواء كنت تشتري رصيدًا لموسم لعب، عناصر تجميلية، أو نقاطًا تنافسية، يقوم NEXUS بتسليم الكود رقميًا حتى تعود للعبة بسرعة.",
+        bullets: [
+          "تسليم سريع للشحن",
+          "توضيح واضح للمنصة والمنطقة",
+          "دفع آمن ومخزون موثق",
+          "مناسب للإهداء للأصدقاء والفريق"
+        ],
+        includes: [
+          "كود عملة رقمي واحد",
+          "عرض فوري داخل صفحة طلبك",
+          "إرشادات تفعيل بسيطة",
+          "دعم إذا احتجت مساعدة في التفعيل"
+        ],
+        faqs: [
+          {
+            question: "هل أشتري اللعبة نفسها؟",
+            answer: "لا. هذا المنتج عملة داخل اللعبة أو رصيد حساب للعبة تلعبها بالفعل."
+          },
+          {
+            question: "كيف أستلمه؟",
+            answer: "تستلم كودًا رقميًا مباشرة بعد الدفع داخل تفاصيل الطلب."
+          },
+          {
+            question: "هل يمكن تفعيله في أي منطقة؟",
+            answer: `استخدم المنطقة الظاهرة في صفحة المنتج. هذا المنتج محدد لمنطقة ${regionLabel}.`
+          }
+        ],
+        platformRedeem
+      };
+    }
+
+    return {
+      eyebrow: "وصول للعبة كاملة",
+      lead: `أنت تشتري ${product.name} كلعبة كاملة يتم تسليمها ككود رقمي. اشتر من NEXUS، استلم الكود فورًا، فعّله على ${product.platform.name}، وابدأ اللعب.`,
+      overview:
+        `${product.name} متوفرة هنا كمنتج لعبة رقمية كاملة من بائع واحد موثق. الصفحة مصممة لإزالة الالتباس: هذا ليس فتحًا مؤقتًا أو بيانات عشوائية، بل كود لعبة رقمي حقيقي للتفعيل على المنصة الصحيحة.`,
+      bullets: [
+        "وصول للعبة كاملة بتسليم رقمي",
+        `التفعيل مباشرة على ${product.platform.name}`,
+        `المنطقة موضحة: ${regionLabel}`,
+        "مخزون موثق من بائع واحد"
+      ],
+      includes: [
+        "كود رقمي للعبة كاملة",
+        "تسليم سريع إلى صفحة طلبك",
+        "إرشادات تفعيل واضحة للمنصة",
+        "دعم إذا احتجت مساعدة في التفعيل"
+      ],
+      faqs: [
+        {
+          question: "هل أشتري اللعبة الحقيقية؟",
+          answer: "نعم. أنت تشتري اللعبة الكاملة ويتم تسليمها ككود رقمي."
+        },
+        {
+          question: "كيف يعمل التسليم؟",
+          answer: "بعد الدفع، يظهر الكود في صفحة طلبك الآمنة حتى تفعّله مباشرة."
+        },
+        {
+          question: "أين أقوم بالتفعيل؟",
+          answer: platformRedeem
+        }
+      ],
+      platformRedeem
+    };
+  }
 
   if (product.category.slug === "gift-cards") {
     return {
@@ -95,7 +254,7 @@ export const getProductNarrative = (product: Product) => {
       eyebrow: "Membership Access",
       lead: `Activate ${product.name} quickly with a secure digital code from NEXUS and start using your membership without waiting for manual processing.`,
       overview:
-        `This subscription product is designed for players who want fast access to memberships, libraries, or premium account benefits. NEXUS keeps the flow simple: buy, receive your code, redeem it on the correct platform, and start using the service.`,
+        "This subscription product is designed for players who want fast access to memberships, libraries, or premium account benefits. NEXUS keeps the flow simple: buy, receive your code, redeem it on the correct platform, and start using the service.",
       bullets: [
         "Fast delivery after payment confirmation",
         `Clear redemption on ${product.platform.name}`,
@@ -131,7 +290,7 @@ export const getProductNarrative = (product: Product) => {
       eyebrow: "Game Currency",
       lead: `Get ${product.name} instantly and top up your game balance with a secure digital code, clearly labeled for platform and region.`,
       overview:
-        `This product is built for fast top-ups. Whether you are buying battle pass funds, cosmetic currency, or competitive points, NEXUS delivers the code digitally so you can redeem it quickly and jump back into the game.`,
+        "This product is built for fast top-ups. Whether you are buying battle pass funds, cosmetic currency, or competitive points, NEXUS delivers the code digitally so you can redeem it quickly and jump back into the game.",
       bullets: [
         "Fast delivery for quick top-ups",
         "Clear platform and region labeling",
@@ -198,8 +357,29 @@ export const getProductNarrative = (product: Product) => {
   };
 };
 
-export const getRedeemSteps = (product: Product) => {
-  const platformRedeem = getPlatformRedeemLabel(product.platform.name);
+export const getRedeemSteps = (product: Product, language: Language = "en") => {
+  const platformRedeem = getPlatformRedeemLabel(product.platform.name, language);
+
+  if (language === "ar") {
+    return [
+      {
+        title: "اختر المنتج",
+        description: `اختر ${product.name} وراجع تفاصيل المنصة والمنطقة قبل الدفع.`
+      },
+      {
+        title: "ادفع بأمان",
+        description: "أكمل الدفع مع تسليم رقمي فوري من NEXUS."
+      },
+      {
+        title: "استلم الكود",
+        description: "افتح صفحة طلبك لعرض كود المنتج أو معلومات الرصيد الرقمي."
+      },
+      {
+        title: "فعّل واستخدم",
+        description: `${platformRedeem} وابدأ استخدام المنتج فورًا.`
+      }
+    ];
+  }
 
   return [
     {

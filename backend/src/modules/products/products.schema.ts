@@ -60,6 +60,7 @@ export const createProductSchema = {
       tags: z.array(z.string()).default([]),
       coverImageUrl: z.string().url().optional(),
       thumbnailUrl: z.string().url().optional(),
+      trailerVideoId: z.string().regex(/^[a-zA-Z0-9_-]{11}$/).nullable().optional(),
       images: z.array(z.string().url()).default([]),
       minQuantity: z.coerce.number().min(1).default(1),
       maxQuantity: z.coerce.number().min(1).default(10)
@@ -84,4 +85,3 @@ export const importKeysSchema = {
     })
     .strict()
 };
-

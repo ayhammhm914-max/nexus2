@@ -12,30 +12,30 @@ const platformCards = [
   },
   {
     to: "/store?category=console-games",
-    titleKey: "platform.card5.title",
-    bodyKey: "platform.card5.body",
-    labelKey: "platform.card5.label",
+    titleKey: "platform.card2.title",
+    bodyKey: "platform.card2.body",
+    labelKey: "platform.card2.label",
     icon: Gamepad2
   },
   {
     to: "/store?category=gift-cards",
-    titleKey: "platform.card2.title",
-    bodyKey: "platform.card2.body",
-    labelKey: "platform.card2.label",
+    titleKey: "platform.card3.title",
+    bodyKey: "platform.card3.body",
+    labelKey: "platform.card3.label",
     icon: Gift
   },
   {
     to: "/store?category=subscriptions",
-    titleKey: "platform.card3.title",
-    bodyKey: "platform.card3.body",
-    labelKey: "platform.card3.label",
+    titleKey: "platform.card4.title",
+    bodyKey: "platform.card4.body",
+    labelKey: "platform.card4.label",
     icon: Sparkles
   },
   {
     to: "/store?category=in-game-currency",
-    titleKey: "platform.card4.title",
-    bodyKey: "platform.card4.body",
-    labelKey: "platform.card4.label",
+    titleKey: "platform.card5.title",
+    bodyKey: "platform.card5.body",
+    labelKey: "platform.card5.label",
     icon: Wallet
   }
 ] as const;
