@@ -323,7 +323,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 backdrop-blur-xl">
+    <header className="relative sticky top-0 z-40 backdrop-blur-xl">
       {!announcementDismissed ? (
         <div className="border-b border-primary/15 bg-background/80">
           <div className="mx-auto flex max-w-screen-2xl items-center justify-between gap-4 overflow-hidden px-4 py-2 text-[11px] uppercase tracking-[0.26em] text-primary sm:px-6">
@@ -448,10 +448,26 @@ export const Header = () => {
         </div>
       </div>
 
+      <AnimatePresence>
+        {activeDesktopMenu ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.12, ease: "easeOut" }}
+            className="pointer-events-none fixed inset-0 z-10 hidden bg-[radial-gradient(circle_at_top,rgba(64,224,255,0.1),transparent_28%),linear-gradient(180deg,rgba(4,8,20,0.08),rgba(4,8,20,0.3)_42%,rgba(4,8,20,0.55))] backdrop-blur-[4px] lg:block"
+          />
+        ) : null}
+      </AnimatePresence>
+
       <div
-        className="relative hidden border-b border-white/10 bg-[#32367a]/95 shadow-[0_12px_40px_rgba(3,6,18,0.35)] lg:block"
+        className="navbar-laser-strip relative hidden border-b border-white/10 shadow-[0_12px_40px_rgba(3,6,18,0.42)] lg:block"
         onMouseLeave={() => setDesktopCategoryOpen(null)}
       >
+        <div className="navbar-edge-track" />
+        <div className="navbar-edge-track navbar-edge-track-bottom" />
+        <div className="navbar-edge-runner" />
+        <div className="navbar-edge-runner navbar-edge-runner-bottom" />
         <div className="mx-auto flex max-w-screen-2xl items-center justify-between gap-8 px-6">
           <div className="flex items-center gap-1 xl:gap-2">
             {desktopMenuOrder.map((item) => {
@@ -465,10 +481,10 @@ export const Header = () => {
                     setDesktopCategoryOpen((current) => (current === item.key ? null : item.key))
                   }
                   onMouseEnter={() => setDesktopCategoryOpen(item.key)}
-                  className={`inline-flex items-center gap-2 rounded-md px-4 py-4 text-sm font-semibold uppercase tracking-[0.12em] transition ${
+                  className={`inline-flex items-center gap-2 rounded-md px-4 py-4 text-sm font-semibold uppercase tracking-[0.12em] transition duration-150 ${
                     isActive
-                      ? "bg-[#5a5fd6] text-white shadow-[0_14px_30px_rgba(90,95,214,0.35)]"
-                      : "text-white/95 hover:bg-white/10"
+                      ? "border border-white/20 bg-[linear-gradient(135deg,rgba(61,79,255,0.7),rgba(0,212,255,0.26)_58%,rgba(133,92,255,0.56))] text-white shadow-[0_0_0_1px_rgba(255,255,255,0.1),0_0_24px_rgba(0,212,255,0.24),0_18px_38px_rgba(31,44,138,0.34)]"
+                      : "border border-transparent text-white/95 hover:border-white/10 hover:bg-white/10 hover:shadow-[0_0_22px_rgba(0,212,255,0.12)]"
                   }`}
                 >
                   {item.label}
@@ -481,9 +497,9 @@ export const Header = () => {
           <nav className="flex items-center gap-8">
             {utilityLinks.map((link) => (
               <NavLink
-                key={link.label}
-                to={link.to}
-                className="text-sm font-semibold uppercase tracking-[0.12em] text-white/95 transition hover:text-white"
+              key={link.label}
+              to={link.to}
+                className="rounded-md border border-transparent px-2 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white/95 transition duration-150 hover:border-white/10 hover:bg-white/10 hover:text-white"
               >
                 {link.label}
               </NavLink>
@@ -495,11 +511,11 @@ export const Header = () => {
           {activeDesktopMenu ? (
             <motion.div
               key={activeDesktopMenu.key}
-              initial={{ opacity: 0, y: -12 }}
+              initial={{ opacity: 0, y: -6, scale: 0.988 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.18, ease: "easeOut" }}
-              className="absolute inset-x-0 top-full border-t border-white/10 bg-[#10132a]/98 shadow-[0_32px_70px_rgba(2,4,14,0.58)]"
+              exit={{ opacity: 0, y: -6, scale: 0.992 }}
+              transition={{ duration: 0.12, ease: "easeOut" }}
+              className="absolute inset-x-0 top-full z-20 border-t border-white/10 bg-[linear-gradient(180deg,rgba(9,14,30,0.97),rgba(10,15,28,0.93))] shadow-[0_32px_90px_rgba(2,4,14,0.58)] backdrop-blur-[16px]"
             >
               {activeDesktopMenu.key === "gift-cards" ? (
                 <div className="mx-auto grid max-w-screen-2xl gap-10 px-6 py-8 xl:grid-cols-[1.2fr_1fr_1fr_1fr]">
@@ -514,7 +530,7 @@ export const Header = () => {
                             key={link.label}
                             to={link.to}
                             onClick={() => setDesktopCategoryOpen(null)}
-                            className="block text-base font-medium text-white/92 transition hover:text-primary"
+                            className="block rounded-2xl px-3 py-2 text-base font-medium text-white/92 transition duration-150 hover:bg-white/[0.05] hover:text-primary"
                           >
                             {link.label}
                           </Link>
@@ -536,7 +552,7 @@ export const Header = () => {
                             key={link.label}
                             to={link.to}
                             onClick={() => setDesktopCategoryOpen(null)}
-                            className="group flex items-center justify-between rounded-2xl border border-transparent px-4 py-4 transition hover:border-white/10 hover:bg-white/[0.04]"
+                            className="group flex items-center justify-between rounded-2xl border border-transparent px-4 py-4 transition duration-150 hover:border-white/10 hover:bg-white/[0.05] hover:shadow-[0_0_24px_rgba(0,212,255,0.08)]"
                           >
                             <div>
                               <div className="text-[1.05rem] font-semibold text-white">{link.label}</div>
