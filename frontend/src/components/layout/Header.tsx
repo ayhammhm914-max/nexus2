@@ -18,6 +18,7 @@ import type { Product } from "../../types/product.types";
 import { useCartStore } from "../../store/cart.store";
 import { useLanguageStore, useTranslation } from "../../store/language.store";
 import { useUIStore } from "../../store/ui.store";
+import { getProductPrimaryImage } from "../../utils/productMedia";
 import { Button } from "../ui/Button";
 import type { TranslationKey } from "../../i18n/translations";
 
@@ -286,7 +287,7 @@ const ProductPreviewCard = ({
   product: Product;
   onNavigate?: () => void;
 }) => {
-  const image = product.thumbnailUrl ?? product.coverImageUrl;
+  const image = getProductPrimaryImage(product);
 
   return (
     <Link
@@ -504,10 +505,12 @@ export const Header = () => {
         className="navbar-laser-strip relative z-30 hidden border-b border-white/10 shadow-[0_12px_40px_rgba(3,6,18,0.42)] lg:block"
         onMouseLeave={() => setDesktopCategoryOpen(null)}
       >
-        <div className="navbar-edge-track" />
-        <div className="navbar-edge-track navbar-edge-track-bottom" />
-        <div className="navbar-edge-runner" />
-        <div className="navbar-edge-runner navbar-edge-runner-bottom" />
+        <div className="navbar-laser-fx" aria-hidden="true">
+          <div className="navbar-edge-track" />
+          <div className="navbar-edge-track navbar-edge-track-bottom" />
+          <div className="navbar-edge-runner" />
+          <div className="navbar-edge-runner navbar-edge-runner-bottom" />
+        </div>
         <div className="mx-auto flex max-w-screen-2xl items-center justify-between gap-8 px-6">
           <div className="flex items-center gap-1 xl:gap-2">
             {desktopMenuOrder.map((item) => {

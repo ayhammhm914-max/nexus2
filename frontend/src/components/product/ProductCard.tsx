@@ -12,6 +12,7 @@ import {
   getPlatformRedeemLabel,
   getProductOfferLabel
 } from "../../utils/storefront";
+import { getProductPrimaryImage } from "../../utils/productMedia";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { PriceDisplay } from "../ui/PriceDisplay";
@@ -31,6 +32,7 @@ export const ProductCard = ({
   const productDescription = getLocalizedProductShortDescription(product, language);
   const productTrustLine = product.stock <= 8 ? t("product.sellingFast") : t("product.verifiedStock");
   const platformRedeemLabel = getPlatformRedeemLabel(product.platform.name, language);
+  const productImage = getProductPrimaryImage(product);
 
   return (
     <motion.article
@@ -56,7 +58,7 @@ export const ProductCard = ({
 
       <div className="relative z-20 pointer-events-none aspect-[4/5] overflow-hidden">
         <img
-          src={product.thumbnailUrl ?? product.coverImageUrl ?? ""}
+          src={productImage}
           alt={product.name}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           loading="lazy"
