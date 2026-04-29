@@ -22,3 +22,5 @@ backend/generated
 backend/prisma/dev.db
 backend/prisma/dev.db-journal
 *.log
+
+.vercel
