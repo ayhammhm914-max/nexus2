@@ -18,6 +18,14 @@ export const refreshTokenCookieOptions: CookieOptions = {
   path: "/"
 };
 
+export const oauthCookieOptions: CookieOptions = {
+  httpOnly: true,
+  secure: env.NODE_ENV === "production",
+  sameSite: "lax",
+  maxAge: 10 * 60 * 1000,
+  path: `/api/${env.API_VERSION}/auth`
+};
+
 export const setAccessTokenCookie = (res: Response, token: string) => {
   res.cookie("accessToken", token, accessTokenCookieOptions);
 };
@@ -29,4 +37,18 @@ export const setRefreshTokenCookie = (res: Response, token: string) => {
 export const clearTokenCookies = (res: Response) => {
   res.clearCookie("accessToken", accessTokenCookieOptions);
   res.clearCookie("refreshToken", refreshTokenCookieOptions);
+};
+
+export const setOAuthCookies = (
+  res: Response,
+  provider: string,
+  values: { state: string; nonce: string }
+) => {
+  res.cookie(`oauth_${provider}_state`, values.state, oauthCookieOptions);
+  res.cookie(`oauth_${provider}_nonce`, values.nonce, oauthCookieOptions);
+};
+
+export const clearOAuthCookies = (res: Response, provider: string) => {
+  res.clearCookie(`oauth_${provider}_state`, oauthCookieOptions);
+  res.clearCookie(`oauth_${provider}_nonce`, oauthCookieOptions);
 };

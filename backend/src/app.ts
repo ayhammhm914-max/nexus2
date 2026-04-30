@@ -3,7 +3,6 @@ import cookieParser from "cookie-parser";
 import express from "express";
 import fs from "node:fs";
 import path from "node:path";
-import passport from "passport";
 import { prisma } from "./config/database";
 import { env } from "./config/env";
 import { logger } from "./config/logger";
@@ -19,7 +18,6 @@ import { loggingMiddleware } from "./middleware/logging.middleware";
 import { securityMiddleware } from "./middleware/security.middleware";
 import { adminRoutes } from "./modules/admin/admin.routes";
 import { authRoutes } from "./modules/auth/auth.routes";
-import { configureOAuthStrategies } from "./modules/auth/oauth.strategy";
 import { cartRoutes } from "./modules/cart/cart.routes";
 import { ordersRoutes } from "./modules/orders/orders.routes";
 import { paymentsRoutes } from "./modules/payments/payments.routes";
@@ -35,8 +33,6 @@ import { saleEndNotificationJob } from "./jobs/saleEndNotification.job";
 import { stockAlertJob } from "./jobs/stockAlert.job";
 
 initializeSentry();
-
-configureOAuthStrategies();
 
 const app = express();
 const resolveWellKnownDirectory = () => {
@@ -67,7 +63,6 @@ if (env.NODE_ENV === "production" && env.FORCE_HTTPS) {
 app.use(loggingMiddleware);
 app.use(corsMiddleware);
 app.use(cookieParser());
-app.use(passport.initialize());
 
 app.get("/api/v1/health", async (_req, res) => {
   await prisma.$queryRaw`SELECT 1`;

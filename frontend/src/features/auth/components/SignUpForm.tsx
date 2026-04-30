@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { Link } from "react-router-dom";
 import { Button } from "../../../components/ui/Button";
+import { authRedirectUrl } from "../../../lib/api";
 import { useTranslation } from "../../../store/language.store";
 import {
   createSignUpSchema,
@@ -90,6 +91,21 @@ export const SignUpForm = ({ onSubmit, isLoading, error, success }: SignUpFormPr
       <Button className="mt-6 w-full" disabled={isLoading}>
         {isLoading ? t("auth.creating") : t("auth.createAccount")}
       </Button>
+      <div className="my-5 flex items-center gap-3 text-xs uppercase tracking-[0.22em] text-muted">
+        <span className="h-px flex-1 bg-white/10" />
+        {t("auth.or")}
+        <span className="h-px flex-1 bg-white/10" />
+      </div>
+      <button
+        type="button"
+        className="flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-4 font-semibold text-white transition duration-200 hover:border-primary/40 hover:bg-primary/10"
+        onClick={() => window.location.assign(authRedirectUrl("/auth/google"))}
+      >
+        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white text-sm font-black text-slate-950">
+          G
+        </span>
+        {t("auth.continueWithGoogle")}
+      </button>
       <p className="mt-4 text-sm text-muted">
         {t("auth.alreadyRegistered")}{" "}
         <Link to="/login" className="text-primary">

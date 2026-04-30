@@ -45,7 +45,13 @@ import {
   getYoutubeSearchUrl,
   toStringArray
 } from "../utils/productExperience";
-import { getProductPrimaryImage, getProductWatermarkImage, isCardLikeProduct } from "../utils/productMedia";
+import {
+  getPlaceholderCoverUrl,
+  getPlaceholderThumbUrl,
+  getProductPrimaryImage,
+  getProductWatermarkImage,
+  isCardLikeProduct
+} from "../utils/productMedia";
 import {
   getLocalizedCategoryName,
   getPlatformRedeemLabel,
@@ -140,6 +146,8 @@ export const ProductDetailPage = () => {
   const gallery = getProductGallery(data);
   const primaryImage = getProductPrimaryImage(data);
   const posterImage = gallery[0] ?? primaryImage ?? data.coverImageUrl ?? data.thumbnailUrl ?? "";
+  const posterFallbackImage = getPlaceholderThumbUrl(data.slug || data.name);
+  const cardFallbackImage = getPlaceholderCoverUrl(data.slug || data.name);
   const watermarkImage = getProductWatermarkImage(data);
   const isCardProduct = isCardLikeProduct(data);
   const narrative = getProductNarrative(data, language);
@@ -303,7 +311,18 @@ export const ProductDetailPage = () => {
             style={watermarkImage ? ({ "--brand-watermark": `url(${watermarkImage})` } as CSSProperties) : undefined}
           />
         ) : shouldUsePoster ? (
-          <img className="cinematic-game-poster" src={posterImage} alt="" aria-hidden="true" />
+          <img
+            className="cinematic-game-poster"
+            src={posterImage}
+            alt=""
+            aria-hidden="true"
+            onError={(event) => {
+              const img = event.currentTarget;
+              if (img.src !== posterFallbackImage) {
+                img.src = posterFallbackImage;
+              }
+            }}
+          />
         ) : trailerVideoUrl ? (
           <video
             ref={videoRef}
@@ -398,7 +417,17 @@ export const ProductDetailPage = () => {
           <aside className="cinematic-meta-panel">
             {isCardProduct ? (
               <div className="cinematic-card-preview" aria-label={language === "ar" ? "صورة البطاقة" : "Card image"}>
-                <img src={primaryImage} alt={data.name} loading="lazy" />
+                <img
+                  src={primaryImage}
+                  alt={data.name}
+                  loading="lazy"
+                  onError={(event) => {
+                    const img = event.currentTarget;
+                    if (img.src !== cardFallbackImage) {
+                      img.src = cardFallbackImage;
+                    }
+                  }}
+                />
               </div>
             ) : null}
             <div className="cinematic-edition-card">

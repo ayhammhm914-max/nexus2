@@ -1,6 +1,7 @@
 import { useState } from "react";
-import api, { authPath, usesVersionedAuthApi } from "../../../lib/api";
+import { getApiErrorMessage } from "../../../lib/api";
 import { useTranslation } from "../../../store/language.store";
+import { useAuth } from "../context/AuthContext";
 import type { SignUpFormValues } from "../validation/authSchemas";
 
 const toUsername = (name: string, email: string) => {
@@ -28,6 +29,7 @@ export const useSignUp = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const { register } = useAuth();
   const { t } = useTranslation();
 
   const handleSignUp = async (values: SignUpFormValues) => {
@@ -36,22 +38,14 @@ export const useSignUp = () => {
     setSuccess(null);
 
     try {
-      const payload = usesVersionedAuthApi
-        ? {
-            email: values.email,
-            username: toUsername(values.name, values.email),
-            password: values.password
-          }
-        : {
-            name: values.name,
-            email: values.email,
-            password: values.password
-          };
-
-      await api.post(authPath("/auth/register"), payload);
+      await register({
+        email: values.email,
+        username: toUsername(values.name, values.email),
+        password: values.password
+      });
       setSuccess(t("auth.success.register"));
-    } catch {
-      setError(t("auth.error.register"));
+    } catch (authError) {
+      setError(getApiErrorMessage(authError, t("auth.error.register")));
     } finally {
       setIsLoading(false);
     }
@@ -59,3 +53,4 @@ export const useSignUp = () => {
 
   return { handleSignUp, isLoading, error, success };
 };
+

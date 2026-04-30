@@ -1,77 +1,59 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import api, { authPath } from "../../../lib/api";
-import {
-  clearAccessToken,
-  getAccessToken,
-  getMemoryUser,
-  setAccessToken,
-  setMemoryUser
-} from "../token";
+import { useAuthStore } from "../../../store/auth.store";
+import type { User } from "../../../types/user.types";
 
-export type AuthUser = {
-  id: number | string;
+export type AuthUser = User & {
   name?: string;
-  username?: string;
-  email: string;
 };
 
 type AuthContextValue = {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  setAuthSession: (user: AuthUser, token?: string) => void;
+  login: (payload: { email: string; password: string; twoFactorCode?: string }) => Promise<{ requiresTwoFactor: boolean }>;
+  register: (payload: { email: string; username: string; password: string }) => Promise<void>;
+  setAuthSession: (user: AuthUser) => void;
   logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+const normalizeUser = (user: User | null): AuthUser | null =>
+  user
+    ? {
+        ...user,
+        name: user.username || user.email.split("@")[0]
+      }
+    : null;
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<AuthUser | null>(() => getMemoryUser());
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    user,
+    isAuthenticated,
+    isLoading,
+    login,
+    logout,
+    refreshToken,
+    register,
+    updateUser
+  } = useAuthStore();
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
 
   useEffect(() => {
-    const existingToken = getAccessToken();
-    const existingUser = getMemoryUser();
-
-    // This flow keeps JWTs in memory only, so the best silent restore available
-    // on mount is rehydrating the in-memory session while the tab stays alive.
-    if (existingUser && (existingToken || existingUser.username)) {
-      setUser(existingUser);
-    } else {
-      clearAccessToken();
-      setMemoryUser(null);
-      setUser(null);
-    }
-
-    setIsLoading(false);
-  }, []);
-
-  const setAuthSession = (nextUser: AuthUser, token?: string) => {
-    setAccessToken(token ?? "");
-    setMemoryUser(nextUser);
-    setUser(nextUser);
-  };
-
-  const logout = async () => {
-    try {
-      await api.post(authPath("/auth/logout"));
-    } finally {
-      clearAccessToken();
-      setMemoryUser(null);
-      setUser(null);
-      window.location.assign("/login");
-    }
-  };
+    void refreshToken().finally(() => setIsBootstrapping(false));
+  }, [refreshToken]);
 
   const value = useMemo(
     () => ({
-      user,
-      isAuthenticated: Boolean(user),
-      isLoading,
-      setAuthSession,
+      user: normalizeUser(user),
+      isAuthenticated,
+      isLoading: isLoading || isBootstrapping,
+      login,
+      register,
+      setAuthSession: updateUser,
       logout
     }),
-    [isLoading, user]
+    [isAuthenticated, isBootstrapping, isLoading, login, logout, register, updateUser, user]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -86,3 +68,4 @@ export const useAuth = () => {
 
   return context;
 };
+

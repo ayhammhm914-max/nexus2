@@ -31,6 +31,7 @@ const envSchema = z.object({
   JWT_ACCESS_EXPIRES: z.string().default("15m"),
   JWT_REFRESH_EXPIRES: z.string().default("7d"),
   JWT_KEY_ID: z.string().default("dev-v1"),
+  AUTH_SECRET: z.string().optional().default(""),
   AES_ENCRYPTION_KEY: z.string().length(64),
   AES_IV_LENGTH: z.coerce.number().default(16),
   STRIPE_SECRET_KEY: z.string().default(""),
@@ -39,9 +40,10 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().default(""),
   GOOGLE_CLIENT_SECRET: z.string().default(""),
   GOOGLE_CALLBACK_URL: z.string().default(""),
-  DISCORD_CLIENT_ID: z.string().default(""),
-  DISCORD_CLIENT_SECRET: z.string().default(""),
-  DISCORD_CALLBACK_URL: z.string().default(""),
+  APPLE_CLIENT_ID: z.string().default(""),
+  APPLE_TEAM_ID: z.string().default(""),
+  APPLE_KEY_ID: z.string().default(""),
+  APPLE_PRIVATE_KEY: z.string().default(""),
   SMTP_HOST: z.string().default(""),
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_USER: z.string().default(""),
@@ -85,8 +87,10 @@ if (
 
 export const env = {
   ...parsed,
+  AUTH_SECRET: parsed.AUTH_SECRET || parsed.CSRF_SECRET,
   JWT_ACCESS_PRIVATE_KEY: normalizeMultiline(parsed.JWT_ACCESS_PRIVATE_KEY),
   JWT_ACCESS_PUBLIC_KEY: normalizeMultiline(parsed.JWT_ACCESS_PUBLIC_KEY),
   JWT_REFRESH_PRIVATE_KEY: normalizeMultiline(parsed.JWT_REFRESH_PRIVATE_KEY),
-  JWT_REFRESH_PUBLIC_KEY: normalizeMultiline(parsed.JWT_REFRESH_PUBLIC_KEY)
+  JWT_REFRESH_PUBLIC_KEY: normalizeMultiline(parsed.JWT_REFRESH_PUBLIC_KEY),
+  APPLE_PRIVATE_KEY: parsed.APPLE_PRIVATE_KEY ? normalizeMultiline(parsed.APPLE_PRIVATE_KEY) : ""
 };

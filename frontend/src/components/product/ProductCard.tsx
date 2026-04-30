@@ -12,7 +12,7 @@ import {
   getPlatformRedeemLabel,
   getProductOfferLabel
 } from "../../utils/storefront";
-import { getProductPrimaryImage } from "../../utils/productMedia";
+import { getPlaceholderCoverUrl, getProductPrimaryImage } from "../../utils/productMedia";
 import { Badge } from "../ui/Badge";
 import { Button } from "../ui/Button";
 import { PriceDisplay } from "../ui/PriceDisplay";
@@ -33,6 +33,7 @@ export const ProductCard = ({
   const productTrustLine = product.stock <= 8 ? t("product.sellingFast") : t("product.verifiedStock");
   const platformRedeemLabel = getPlatformRedeemLabel(product.platform.name, language);
   const productImage = getProductPrimaryImage(product);
+  const fallbackImage = getPlaceholderCoverUrl(product.slug || product.name);
 
   return (
     <motion.article
@@ -62,6 +63,12 @@ export const ProductCard = ({
           alt={product.name}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
           loading="lazy"
+          onError={(event) => {
+            const img = event.currentTarget;
+            if (img.src !== fallbackImage) {
+              img.src = fallbackImage;
+            }
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent" />
         <div className="absolute left-4 top-4 flex flex-wrap gap-2">

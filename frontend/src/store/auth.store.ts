@@ -35,7 +35,7 @@ const scheduleRefresh = () => {
   }, 14 * 60 * 1000);
 };
 
-const baseURL = import.meta.env.VITE_API_URL ?? "/api/v1";
+const baseURL = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api/v1";
 
 export const useAuthStore = create<AuthState>()(
   persist(

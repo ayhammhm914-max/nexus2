@@ -10,6 +10,16 @@ const BRAND_CARD_IMAGES: Record<BrandKey, string> = {
   amazon: "/cards/amazon-gift-card.webp"
 };
 
+const encodeText = (value: string) => encodeURIComponent(value.replace(/\s+/g, " ").trim());
+
+export const getPlaceholderThumbUrl = (label: string) =>
+  `https://placehold.co/900x520/0d1117/00e5ff?text=${encodeText(label)}`;
+
+export const getPlaceholderCoverUrl = (label: string) =>
+  `https://placehold.co/900x1200/0d1117/00e5ff?text=${encodeText(label)}`;
+
+const getPlaceholderLabel = (product: Product) => (product.slug || product.name || "product").trim();
+
 export const isCardLikeProduct = (product: Product) =>
   product.category.slug === "gift-cards" || product.category.slug === "subscriptions";
 
@@ -48,8 +58,13 @@ export const getProductCardImageOverride = (product: Product) => {
 };
 
 export const getProductPrimaryImage = (product: Product) =>
-  getProductCardImageOverride(product) ?? product.thumbnailUrl ?? product.coverImageUrl ?? "";
+  getProductCardImageOverride(product) ??
+  product.coverImageUrl ??
+  product.thumbnailUrl ??
+  getPlaceholderCoverUrl(getPlaceholderLabel(product));
 
 export const getProductWatermarkImage = (product: Product) =>
-  getProductCardImageOverride(product) ?? product.coverImageUrl ?? product.thumbnailUrl ?? "";
-
+  getProductCardImageOverride(product) ??
+  product.coverImageUrl ??
+  product.thumbnailUrl ??
+  getPlaceholderThumbUrl(getPlaceholderLabel(product));

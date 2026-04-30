@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "../../store/language.store";
 import type { Product } from "../../types/product.types";
 import { calculateDiscount, formatCurrency } from "../../utils/format";
+import { getPlaceholderCoverUrl } from "../../utils/productMedia";
 
 type ShowcaseItem = {
   name: string;
@@ -45,7 +46,8 @@ const normalize = (value: string) => value.toLowerCase().replace(/[^a-z0-9]+/g, 
 const toShowcaseItem = (product: Product): ShowcaseItem => ({
   name: product.name,
   to: `/products/${product.slug}`,
-  coverImageUrl: product.coverImageUrl ?? product.thumbnailUrl ?? "",
+  coverImageUrl:
+    product.coverImageUrl ?? product.thumbnailUrl ?? getPlaceholderCoverUrl(product.slug || product.name),
   platformName: product.platform.name,
   platformColor: product.platform.color ?? "#00D4FF",
   basePrice: Number(product.basePrice),
@@ -80,6 +82,7 @@ const HeroVaultCard = ({
   const { t } = useTranslation();
   const discount = calculateDiscount(item.basePrice, item.salePrice);
   const price = item.salePrice ?? item.basePrice;
+  const fallbackImage = getPlaceholderCoverUrl(item.name);
 
   return (
     <Link
@@ -88,7 +91,17 @@ const HeroVaultCard = ({
       style={{ "--platform-color": item.platformColor } as CSSProperties}
       aria-label={`${t("product.openDetails")}: ${item.name}`}
     >
-      <img src={item.coverImageUrl} alt={item.name} loading="lazy" />
+      <img
+        src={item.coverImageUrl}
+        alt={item.name}
+        loading="lazy"
+        onError={(event) => {
+          const img = event.currentTarget;
+          if (img.src !== fallbackImage) {
+            img.src = fallbackImage;
+          }
+        }}
+      />
       <div className="hero-vault-card-shade" />
       <div className="hero-vault-card-top">
         <span>{item.platformName}</span>

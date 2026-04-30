@@ -7,6 +7,7 @@ import type { Request, Response } from "express";
 import { prisma } from "../../config/database";
 import { emailTransport } from "../../config/email";
 import { env } from "../../config/env";
+import { logger } from "../../config/logger";
 import { redis } from "../../config/redis";
 import {
   clearTokenCookies,
@@ -112,17 +113,33 @@ const serializeUser = (user: {
   balance: decimalToNumber(user.balance)
 });
 
+const isEmailDeliveryConfigured = () =>
+  Boolean(
+    env.SMTP_HOST &&
+      env.SMTP_USER &&
+      env.SMTP_PASS &&
+      !["replace_me", "changeme", ""].includes(env.SMTP_PASS.trim())
+  );
+
 const sendEmail = async (to: string, subject: string, html: string) => {
-  if (!env.SMTP_HOST) {
+  if (!isEmailDeliveryConfigured()) {
     return;
   }
 
-  await emailTransport.sendMail({
-    from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
-    to,
-    subject,
-    html
-  });
+  try {
+    await emailTransport.sendMail({
+      from: `${env.EMAIL_FROM_NAME} <${env.EMAIL_FROM}>`,
+      to,
+      subject,
+      html
+    });
+  } catch (error) {
+    logger.warn(
+      `Email delivery skipped after provider failure: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
 };
 
 const recordLoginAttempt = async (
@@ -226,7 +243,16 @@ const checkPwnedPassword = async (password: string) => {
 const createVerificationToken = async (userId: string) => {
   const token = generateSecureToken();
   const tokenHash = hashToken(token);
-  await redis.setEx(`nexus:email-verify:${tokenHash}`, 24 * 60 * 60, userId);
+  await prisma.emailVerificationToken.deleteMany({
+    where: { userId }
+  });
+  await prisma.emailVerificationToken.create({
+    data: {
+      userId,
+      tokenHash,
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
+    }
+  });
   return token;
 };
 
@@ -301,11 +327,54 @@ const verifyStoredTwoFactorCode = async (
   return true;
 };
 
+const normalizeEmail = (email: string) => email.trim().toLowerCase();
+
+const normalizeUsername = (value: string) => {
+  const normalized = value
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/[^a-zA-Z0-9_]/g, "")
+    .slice(0, 24);
+
+  return normalized.length >= 3 ? normalized : `user_${crypto.randomBytes(4).toString("hex")}`;
+};
+
+const buildUsernameCandidates = (email: string, displayName?: string) => {
+  const localPart = email.split("@")[0] ?? "user";
+  return [
+    displayName ? normalizeUsername(displayName) : "",
+    normalizeUsername(localPart),
+    `user_${crypto.randomBytes(5).toString("hex")}`
+  ].filter(Boolean);
+};
+
+const getUniqueUsername = async (email: string, displayName?: string) => {
+  for (const candidate of buildUsernameCandidates(email, displayName)) {
+    const existing = await prisma.user.findUnique({ where: { username: candidate } });
+    if (!existing) {
+      return candidate;
+    }
+  }
+
+  return `user_${crypto.randomUUID().replace(/-/g, "").slice(0, 12)}`;
+};
+
+type OAuthProfile = {
+  provider: string;
+  providerUserId: string;
+  email: string;
+  emailVerified: boolean;
+  displayName?: string;
+  avatarUrl?: string;
+};
+
 export const authService = {
   async register(input: { email: string; username: string; password: string }, meta: SessionMeta) {
+    const normalizedEmail = normalizeEmail(input.email);
+    const normalizedUsername = normalizeUsername(input.username);
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [{ email: input.email }, { username: input.username }]
+        OR: [{ email: normalizedEmail }, { username: normalizedUsername }]
       }
     });
 
@@ -321,9 +390,10 @@ export const authService = {
     const passwordHash = await hashPassword(input.password);
     const user = await prisma.user.create({
       data: {
-        email: input.email,
-        username: input.username,
+        email: normalizedEmail,
+        username: normalizedUsername,
         passwordHash,
+        isEmailVerified: !isEmailDeliveryConfigured(),
         profile: {
           create: {}
         },
@@ -333,13 +403,15 @@ export const authService = {
       }
     });
 
-    const verificationToken = await createVerificationToken(user.id);
-    const verificationUrl = `${env.FRONTEND_URL}/verify-email/${verificationToken}`;
-    await sendEmail(
-      user.email,
-      "Welcome to NEXUS",
-      welcomeEmail(user.username, verificationUrl)
-    );
+    if (isEmailDeliveryConfigured()) {
+      const verificationToken = await createVerificationToken(user.id);
+      const verificationUrl = `${env.FRONTEND_URL}/verify-email/${verificationToken}`;
+      await sendEmail(
+        user.email,
+        "Welcome to NEXUS",
+        welcomeEmail(user.username, verificationUrl)
+      );
+    }
 
     const tokens = await createSessionTokens(user, meta);
 
@@ -397,7 +469,7 @@ export const authService = {
       throw new Error(user.banReason || "This account has been suspended.");
     }
 
-    if (!user.isEmailVerified) {
+    if (!user.isEmailVerified && isEmailDeliveryConfigured()) {
       const verificationToken = await createVerificationToken(user.id);
       const verificationUrl = `${env.FRONTEND_URL}/verify-email/${verificationToken}`;
       await sendEmail(
@@ -407,6 +479,14 @@ export const authService = {
       );
       await recordLoginAttempt(normalizedEmail, false, meta, user.id);
       throw new Error("Email not verified. A new verification email has been sent.");
+    }
+
+    if (!user.isEmailVerified && !isEmailDeliveryConfigured()) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { isEmailVerified: true }
+      });
+      user.isEmailVerified = true;
     }
 
     if (user.twoFactorEnabled) {
@@ -501,20 +581,138 @@ export const authService = {
     };
   },
 
+  async me(userId: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId }
+    });
+
+    if (!user || !user.isActive || user.isBanned) {
+      throw new Error("User session is no longer valid.");
+    }
+
+    return serializeUser(user);
+  },
+
+  async loginWithOAuth(profile: OAuthProfile, meta: SessionMeta) {
+    const normalizedEmail = normalizeEmail(profile.email);
+
+    const result = await prisma.$transaction(async (tx) => {
+      const linkedAccount = await tx.oAuthAccount.findUnique({
+        where: {
+          provider_providerUserId: {
+            provider: profile.provider,
+            providerUserId: profile.providerUserId
+          }
+        },
+        include: { user: true }
+      });
+
+      if (linkedAccount) {
+        const user = await tx.user.update({
+          where: { id: linkedAccount.userId },
+          data: {
+            lastLoginAt: new Date(),
+            avatarUrl: profile.avatarUrl ?? linkedAccount.user.avatarUrl
+          }
+        });
+
+        await tx.oAuthAccount.update({
+          where: { id: linkedAccount.id },
+          data: {
+            email: normalizedEmail,
+            displayName: profile.displayName,
+            avatarUrl: profile.avatarUrl
+          }
+        });
+
+        return user;
+      }
+
+      const existingUser = await tx.user.findUnique({
+        where: { email: normalizedEmail }
+      });
+
+      const user =
+        existingUser ??
+        (await tx.user.create({
+          data: {
+            email: normalizedEmail,
+            username: await getUniqueUsername(normalizedEmail, profile.displayName),
+            passwordHash: null,
+            isEmailVerified: profile.emailVerified,
+            avatarUrl: profile.avatarUrl,
+            profile: {
+              create: {}
+            },
+            cart: {
+              create: {}
+            }
+          }
+        }));
+
+      const updatedUser = existingUser
+        ? await tx.user.update({
+            where: { id: user.id },
+            data: {
+              isEmailVerified: profile.emailVerified ? true : user.isEmailVerified,
+              avatarUrl: profile.avatarUrl ?? user.avatarUrl,
+              lastLoginAt: new Date()
+            }
+          })
+        : user;
+
+      await tx.oAuthAccount.create({
+        data: {
+          userId: updatedUser.id,
+          provider: profile.provider,
+          providerUserId: profile.providerUserId,
+          email: normalizedEmail,
+          displayName: profile.displayName,
+          avatarUrl: profile.avatarUrl
+        }
+      });
+
+      return updatedUser;
+    });
+
+    if (result.isBanned) {
+      await recordLoginAttempt(normalizedEmail, false, meta, result.id);
+      throw new Error(result.banReason || "This account has been suspended.");
+    }
+
+    const tokens = await createSessionTokens(result, meta);
+    await recordLoginAttempt(normalizedEmail, true, meta, result.id);
+
+    return {
+      user: serializeUser(result),
+      ...tokens
+    };
+  },
+
   async verifyEmail(token: string) {
     const tokenHash = hashToken(token);
-    const userId = await redis.get(`nexus:email-verify:${tokenHash}`);
+    const verificationToken = await prisma.emailVerificationToken.findUnique({
+      where: { tokenHash }
+    });
 
-    if (!userId) {
+    if (!verificationToken || verificationToken.expiresAt < new Date()) {
+      if (verificationToken) {
+        await prisma.emailVerificationToken.delete({
+          where: { id: verificationToken.id }
+        });
+      }
       throw new Error("Verification token is invalid or expired.");
     }
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: { isEmailVerified: true }
-    });
-
-    await redis.del(`nexus:email-verify:${tokenHash}`);
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: verificationToken.userId },
+        data: { isEmailVerified: true }
+      }),
+      prisma.emailVerificationToken.deleteMany({
+        where: { userId: verificationToken.userId }
+      })
+    ]);
   },
 
   async forgotPassword(email: string) {

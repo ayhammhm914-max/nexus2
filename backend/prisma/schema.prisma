@@ -156,6 +156,8 @@ model User {
   adminAuditLogs      AdminAuditLog[]
   loginAttempts       LoginAttempt[]
   passwordResetTokens PasswordResetToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  oauthAccounts       OAuthAccount[]
 
   @@index([email])
   @@index([username])
@@ -207,6 +209,23 @@ model LoginAttempt {
 
   @@index([email])
   @@index([createdAt])
+}
+
+model OAuthAccount {
+  id             String   @id @default(uuid())
+  userId         String
+  provider       String
+  providerUserId String
+  email          String?
+  displayName    String?
+  avatarUrl      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@index([provider, email])
 }
 
 model Category {
@@ -591,6 +610,18 @@ model AdminAuditLog {
 }
 
 model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model EmailVerificationToken {
   id        String   @id @default(uuid())
   userId    String
   tokenHash String   @unique

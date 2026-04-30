@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "../../store/language.store";
 import type { Product } from "../../types/product.types";
 import { getPlatformRedeemLabel, getProductOfferLabel } from "../../utils/storefront";
+import { getPlaceholderCoverUrl, getProductPrimaryImage } from "../../utils/productMedia";
 import { Button } from "../ui/Button";
 import { PriceDisplay } from "../ui/PriceDisplay";
 import { HeroCinematicBackground } from "./HeroCinematicBackground";
@@ -134,9 +135,16 @@ export const HeroBanner = ({ spotlightProducts, showcaseProducts }: HeroBannerPr
                     >
                       <div className="flex items-start gap-4">
                         <img
-                          src={product.thumbnailUrl ?? product.coverImageUrl ?? ""}
+                          src={getProductPrimaryImage(product)}
                           alt={product.name}
                           className="h-24 w-20 rounded-2xl object-cover"
+                          onError={(event) => {
+                            const img = event.currentTarget;
+                            const fallback = getPlaceholderCoverUrl(product.slug || product.name);
+                            if (img.src !== fallback) {
+                              img.src = fallback;
+                            }
+                          }}
                         />
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap gap-2">

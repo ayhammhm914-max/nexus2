@@ -16,10 +16,15 @@ import {
 
 export const authRoutes = Router();
 
+authRoutes.get("/me", authMiddleware, asyncHandler(authController.me));
 authRoutes.post("/register", rateLimiters.register, validate(registerSchema), asyncHandler(authController.register));
 authRoutes.post("/login", rateLimiters.login, validate(loginSchema), asyncHandler(authController.login));
 authRoutes.post("/logout", authMiddleware, asyncHandler(authController.logout));
 authRoutes.post("/refresh", rateLimiters.refresh, asyncHandler(authController.refresh));
+authRoutes.get("/google", rateLimiters.login, asyncHandler(authController.startGoogleOAuth));
+authRoutes.get("/google/callback", rateLimiters.login, asyncHandler(authController.googleOAuthCallback));
+authRoutes.get("/apple", rateLimiters.login, asyncHandler(authController.startAppleOAuth));
+authRoutes.post("/apple/callback", rateLimiters.login, asyncHandler(authController.appleOAuthCallback));
 authRoutes.get("/verify-email/:token", validate(verifyTokenSchema), asyncHandler(authController.verifyEmail));
 authRoutes.post(
   "/forgot-password",

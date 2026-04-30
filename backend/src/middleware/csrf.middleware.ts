@@ -6,7 +6,8 @@ import { errorResponse } from "../utils/response.utils";
 
 const csrfBypassPaths = new Set([
   `/api/${env.API_VERSION}/payments/stripe/webhook`,
-  `/api/${env.API_VERSION}/csp-report`
+  `/api/${env.API_VERSION}/csp-report`,
+  `/api/${env.API_VERSION}/auth/apple/callback`
 ]);
 
 const hashCSRFToken = (token: string) =>

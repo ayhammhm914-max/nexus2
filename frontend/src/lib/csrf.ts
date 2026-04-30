@@ -1,4 +1,4 @@
-const apiBaseUrl = import.meta.env.VITE_API_URL ?? "/api/v1";
+const apiBaseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:3001/api/v1";
 
 let csrfToken: string | null = null;
 
