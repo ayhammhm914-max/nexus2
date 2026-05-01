@@ -116,38 +116,39 @@ a {
   isolation: isolate;
 }
 
-.cinematic-hero {
-  width: min(100%, 1320px);
-  margin-inline: auto;
-  margin-top: 18px;
+.cinematic-trailer-player {
+  flex: 0 1 65%;
+  min-width: 0;
   position: relative;
-  /*
-    Keep the trailer in a more "true" 16:9-ish frame so it doesn't feel
-    overly zoomed at normal browser zoom levels.
-  */
-  height: clamp(320px, 56.25vw, 760px);
-  border-radius: 34px;
+  display: block;
+  aspect-ratio: 16 / 9;
+  align-self: stretch;
+  direction: ltr;
+  border-radius: 22px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.16);
   background: #01030a;
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
-  container-type: size;
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.55),
+    0 0 42px color-mix(in srgb, var(--game-accent) 12%, transparent);
 }
 
 .cinematic-game-video,
 .cinematic-game-poster,
-.cinematic-youtube-bg {
+.cinematic-youtube-player {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
   z-index: 0;
   width: 100%;
   height: 100%;
   border: 0;
-  pointer-events: none;
+  transform: none;
+  transform-origin: center;
 }
 
 .cinematic-card-watermark {
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
@@ -158,38 +159,27 @@ a {
     var(--brand-watermark);
   background-repeat: no-repeat;
   background-position: center;
-  background-size: min(86vw, 860px);
-  opacity: 0.14;
+  background-size: min(82%, 760px);
+  opacity: 0.24;
   filter: saturate(1.15) brightness(0.75) contrast(1.1) blur(0.2px);
 }
 
 .cinematic-game-video,
 .cinematic-game-poster {
   object-fit: cover;
+  object-position: center;
 }
 
-.cinematic-youtube-bg {
+.cinematic-youtube-player {
   position: absolute;
-  inset: 0; 
+  top: 0;
+  left: 0;
 
   width: 100%;
   height: 100%;
 
   border: none;
-  pointer-events: none;
-
-  transform: scale(1.1);
-  transform-origin: center;
-}
-
-@supports (width: 1cqw) {
-  .cinematic-youtube-bg {
-    width: max(100cqw, calc(100cqh * 16 / 9));
-    height: max(100cqh, calc(100cqw * 9 / 16));
-    min-width: 0;
-    min-height: 0;
-    transform: translate(-50%, -50%) scale(1.01);
-  }
+  display: block;
 }
 
 .cinematic-overlay {
@@ -246,6 +236,8 @@ a {
 
 .cinematic-topbar,
 .cinematic-tabs,
+.cinematic-feature-row,
+.cinematic-detail-stack,
 .cinematic-product-grid {
   width: min(100%, 1320px);
   margin-inline: auto;
@@ -324,17 +316,64 @@ a {
   color: #ffffff;
 }
 
-.cinematic-product-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
-  align-items: start;
-  gap: clamp(24px, 5vw, 72px);
-  padding-top: 34px;
+.cinematic-feature-row {
+  display: flex;
+  align-items: stretch;
+  gap: clamp(18px, 3vw, 34px);
+  padding-top: 30px;
+  direction: ltr;
 }
 
-.cinematic-info {
-  max-width: 790px;
-  padding-bottom: 12px;
+.cinematic-summary-card {
+  flex: 1 1 35%;
+  min-width: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  background: rgba(8, 12, 24, 0.72);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 28px 76px rgba(0, 0, 0, 0.42);
+  padding: clamp(18px, 3vw, 34px);
+  text-align: center;
+}
+
+.cinematic-summary-rating {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cinematic-summary-rating span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--game-accent) 58%, rgba(255, 255, 255, 0.12));
+  background: color-mix(in srgb, var(--game-accent) 18%, rgba(255, 255, 255, 0.06));
+  color: #ffffff;
+  padding: 8px 12px;
+}
+
+.cinematic-summary-rating svg {
+  color: #ffd257;
+}
+
+.cinematic-summary-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 18px;
 }
 
 .cinematic-badges {
@@ -361,26 +400,46 @@ a {
   color: #ffffff;
 }
 
-.cinematic-info h1 {
-  margin: 22px 0 0;
-  max-width: 900px;
+.cinematic-summary-tags span {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  padding: 8px 12px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cinematic-summary-card h1 {
+  margin: 18px 0 0;
   color: #ffffff;
   font-family: "Orbitron", sans-serif;
-  font-size: clamp(40px, 7vw, 72px);
+  font-size: clamp(34px, 4vw, 58px);
   font-weight: 900;
-  line-height: 0.95;
+  line-height: 1;
   letter-spacing: 0;
   text-shadow: 0 18px 54px rgba(0, 0, 0, 0.72);
+  overflow-wrap: anywhere;
   animation: cinematic-slide-up 650ms ease both;
 }
 
 .cinematic-description {
-  max-width: 680px;
-  margin-top: 22px;
+  max-width: 36ch;
+  margin: 20px 0 0;
   color: rgba(255, 255, 255, 0.82);
-  font-size: clamp(18px, 2vw, 22px);
+  font-size: clamp(16px, 1.55vw, 19px);
   font-weight: 600;
   line-height: 1.55;
+}
+
+.cinematic-detail-stack {
+  display: grid;
+  gap: 16px;
+  margin-top: 24px;
 }
 
 .cinematic-actions {
@@ -388,7 +447,13 @@ a {
   flex-wrap: wrap;
   align-items: center;
   gap: 14px;
-  margin-top: 30px;
+  margin-top: 0;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  background: rgba(8, 12, 24, 0.58);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+  padding: 14px;
 }
 
 .cinematic-primary-cta,
@@ -443,6 +508,7 @@ a {
 
 .cinematic-meta-panel {
   display: grid;
+  grid-template-columns: 1fr;
   gap: 14px;
 }
 
@@ -1184,12 +1250,7 @@ a {
 }
 
 @media (max-width: 767px), (prefers-reduced-motion: reduce) {
-  .cinematic-game-video,
-  .cinematic-youtube-bg {
-    display: none;
-  }
-
-  .cinematic-info h1,
+  .cinematic-summary-card h1,
   .cinematic-live-dot {
     animation: none;
   }
@@ -1214,14 +1275,23 @@ a {
     flex-direction: column-reverse;
   }
 
-  .cinematic-product-grid {
-    grid-template-columns: 1fr;
-    min-height: auto;
-    padding-top: 48px;
+  .cinematic-feature-row {
+    flex-direction: column;
+    padding-top: 26px;
+  }
+
+  .cinematic-trailer-player,
+  .cinematic-summary-card {
+    flex-basis: auto;
+    width: 100%;
+  }
+
+  .cinematic-summary-card {
+    min-width: 0;
   }
 
   .cinematic-meta-panel {
-    width: min(100%, 420px);
+    width: 100%;
   }
 
   .cinematic-about-layout {

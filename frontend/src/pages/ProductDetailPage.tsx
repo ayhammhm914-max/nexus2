@@ -158,6 +158,10 @@ export const ProductDetailPage = () => {
   const youtubeUrl = getYoutubeSearchUrl(data);
   const tags = toStringArray(data.tags);
   const genreLabel = tags[0]?.replace(/-/g, " ") ?? offerLabel;
+  const summaryTags = (tags.length ? tags : [genreLabel, data.type])
+    .map((tag) => tag.replace(/-/g, " "))
+    .slice(0, 4);
+  const summaryDescription = data.shortDescription || narrative.lead;
   const gameAccentColor = data.platform.color ?? "#00d4ff";
   const rawTrailerVideoId = (data.trailerVideoId ?? fallbackTrailerVideoIds[data.slug] ?? "").trim();
   const trailerVideoId = /^[a-zA-Z0-9_-]{11}$/.test(rawTrailerVideoId) ? rawTrailerVideoId : "";
@@ -166,12 +170,12 @@ export const ProductDetailPage = () => {
       ? data.trailerVideoUrl.trim()
       : "";
   const shouldUsePoster = Boolean(
-    prefersReducedMotion || isMobile || isPaused || (!trailerVideoUrl && !trailerVideoId)
+    prefersReducedMotion || (!trailerVideoUrl && !trailerVideoId)
   );
   const trailerEmbedUrl = trailerVideoId
     ? `https://www.youtube.com/embed/${trailerVideoId}?autoplay=${isPaused ? "0" : "1"}&mute=${
         isMuted ? "1" : "0"
-      }&loop=1&playlist=${trailerVideoId}&controls=0&showinfo=0&rel=0&disablekb=1&modestbranding=1&iv_load_policy=3&start=3&playsinline=1`
+      }&loop=1&playlist=${trailerVideoId}&controls=1&showinfo=0&rel=0&modestbranding=1&iv_load_policy=3&start=3&playsinline=1`
     : "";
   const editionConfig = editionConfigs[activeEdition];
   const basePriceForEdition = clampPrice(data.basePrice * editionConfig.multiplier);
@@ -303,53 +307,6 @@ export const ProductDetailPage = () => {
     <section className="cinematic-game-page" style={pageStyle} dir={dir}>
       <div className={`cinematic-fade-overlay ${isFading ? "is-visible" : ""}`} />
 
-      <div className="cinematic-hero" aria-label={t("detail.trailerBackgroundTitle")}>
-        {isCardProduct ? (
-          <div
-            className="cinematic-card-watermark"
-            aria-hidden="true"
-            style={watermarkImage ? ({ "--brand-watermark": `url(${watermarkImage})` } as CSSProperties) : undefined}
-          />
-        ) : shouldUsePoster ? (
-          <img
-            className="cinematic-game-poster"
-            src={posterImage}
-            alt=""
-            aria-hidden="true"
-            onError={(event) => {
-              const img = event.currentTarget;
-              if (img.src !== posterFallbackImage) {
-                img.src = posterFallbackImage;
-              }
-            }}
-          />
-        ) : trailerVideoUrl ? (
-          <video
-            ref={videoRef}
-            className="cinematic-game-video"
-            src={trailerVideoUrl}
-            poster={posterImage}
-            autoPlay
-            muted={isMuted}
-            loop
-            playsInline
-            aria-hidden="true"
-          />
-        ) : (
-          <iframe
-            className="cinematic-youtube-bg"
-            src={trailerEmbedUrl}
-            allow="autoplay; encrypted-media"
-            title={t("detail.trailerBackgroundTitle")}
-            aria-hidden="true"
-          />
-        )}
-
-        <div className="cinematic-overlay cinematic-overlay-bottom" />
-        <div className="cinematic-overlay cinematic-overlay-left" />
-        <div className="cinematic-overlay cinematic-overlay-accent" />
-      </div>
-
       <div className="cinematic-content">
         <div className="cinematic-topbar">
           <div className="cinematic-breadcrumb">
@@ -378,39 +335,87 @@ export const ProductDetailPage = () => {
           ))}
         </div>
 
-        <div className="cinematic-product-grid">
-          <div className="cinematic-info">
-            <div className="cinematic-badges">
-              <span>{genreLabel}</span>
+        <div className="cinematic-feature-row">
+          <div className="cinematic-trailer-player" dir="ltr" aria-label={t("detail.trailerBackgroundTitle")}>
+            {isCardProduct ? (
+              <div
+                className="cinematic-card-watermark"
+                aria-hidden="true"
+                style={watermarkImage ? ({ "--brand-watermark": `url(${watermarkImage})` } as CSSProperties) : undefined}
+              />
+            ) : shouldUsePoster ? (
+              <img
+                className="cinematic-game-poster"
+                src={posterImage}
+                alt={`${data.name} trailer poster`}
+                onError={(event) => {
+                  const img = event.currentTarget;
+                  if (img.src !== posterFallbackImage) {
+                    img.src = posterFallbackImage;
+                  }
+                }}
+              />
+            ) : trailerVideoUrl ? (
+              <video
+                ref={videoRef}
+                className="cinematic-game-video"
+                src={trailerVideoUrl}
+                poster={posterImage}
+                autoPlay
+                muted={isMuted}
+                loop
+                playsInline
+                controls
+              />
+            ) : (
+              <iframe
+                className="cinematic-youtube-player"
+                src={trailerEmbedUrl}
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+                title={`${data.name} trailer`}
+              />
+            )}
+          </div>
+
+          <article className="cinematic-summary-card" dir={dir}>
+            <div className="cinematic-summary-rating">
               <span>
                 <Star className="h-4 w-4 fill-current" />
                 {data.rating ?? "4.9"}
               </span>
-              <span>{data.type.replace(/_/g, " ")}</span>
+              <strong>{data.reviewCount ? `${data.reviewCount} reviews` : t("detail.trailerEyebrow")}</strong>
             </div>
 
             <h1>{data.name}</h1>
-            <p className="cinematic-description">{narrative.lead}</p>
+            <div className="cinematic-summary-tags">
+              {summaryTags.map((tag) => (
+                <span key={tag}>{tag}</span>
+              ))}
+            </div>
+            <p className="cinematic-description">{summaryDescription}</p>
+          </article>
+        </div>
 
-            <div className="cinematic-actions">
-              <button
-                className="cinematic-primary-cta"
-                type="button"
-                onClick={() => addItem(cartProduct)}
-                disabled={effectiveStock <= 0}
-              >
-                <ShoppingCart className="h-5 w-5" />
-                {effectiveStock > 0 ? t("product.addToCart") : t("product.outOfStock")}
-              </button>
-              <a className="cinematic-ghost-cta" href={youtubeUrl} target="_blank" rel="noreferrer">
-                <MonitorPlay className="h-5 w-5" />
-                {t("detail.watchYoutube")}
-                <ExternalLink className="h-4 w-4" />
-              </a>
-              <div className="cinematic-price">
-                {hasDiscount ? <span>{formatCurrency(basePriceForEdition, data.currency)}</span> : null}
-                <strong>{formatCurrency(salePriceForEdition, data.currency)}</strong>
-              </div>
+        <div className="cinematic-detail-stack">
+          <div className="cinematic-actions">
+            <button
+              className="cinematic-primary-cta"
+              type="button"
+              onClick={() => addItem(cartProduct)}
+              disabled={effectiveStock <= 0}
+            >
+              <ShoppingCart className="h-5 w-5" />
+              {effectiveStock > 0 ? t("product.addToCart") : t("product.outOfStock")}
+            </button>
+            <a className="cinematic-ghost-cta" href={youtubeUrl} target="_blank" rel="noreferrer">
+              <MonitorPlay className="h-5 w-5" />
+              {t("detail.watchYoutube")}
+              <ExternalLink className="h-4 w-4" />
+            </a>
+            <div className="cinematic-price">
+              {hasDiscount ? <span>{formatCurrency(basePriceForEdition, data.currency)}</span> : null}
+              <strong>{formatCurrency(salePriceForEdition, data.currency)}</strong>
             </div>
           </div>
 
